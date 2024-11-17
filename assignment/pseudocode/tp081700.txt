@@ -1,0 +1,72 @@
+FUNCTION AdminDashboard:
+    DISPLAY "Overview of Shipments"
+    DISPLAY "Pending Shipments"
+    DISPLAY "Completed Shipments"
+    DISPLAY "Ongoing Deliveries"
+    DISPLAY "Driver Information"
+    DISPLAY "Fleet Management"
+    DISPLAY "Order Processing Status"
+    DISPLAY "Fuel & Vehicle Consumption Stats"
+    DISPLAY "Reports"
+
+FUNCTION VehicleManagementAndMaintenance:
+    FOR each vehicle IN fleet:
+        vehicleStatus = CHECK vehicle.status
+        vehicleMaintenanceHistory = GET vehicle.maintenanceHistory
+        maintenanceAlert = CHECK vehicle.maintenanceDueDate
+        IF maintenanceAlert is TRUE:
+            NOTIFY Admins "Maintenance Due for Vehicle ID: " + vehicle.id
+        ENDIF
+        SCHEDULE maintenance AS NEEDED
+        DISPLAY vehicleStatus, vehicleMaintenanceHistory, maintenanceAlert
+    ENDFOR
+
+FUNCTION ManageFuelAndVehicleConsumption:
+    FOR each vehicle IN fleet:
+        fuelLevel = CHECK vehicle.fuelLevel
+        fuelConsumptionPattern = TRACK vehicle.fuelConsumption
+        utilizationRate = CALCULATE vehicle.utilizationRate
+        DISPLAY fuelLevel, fuelConsumptionPattern, utilizationRate
+        IF fuelLevel < THRESHOLD:
+            NOTIFY Admins "Low Fuel Alert for Vehicle ID: " + vehicle.id
+        ENDIF
+    ENDFOR
+
+FUNCTION DriverManagement:
+    FOR each driver IN drivers:
+        driverStatus = CHECK driver.status 
+        currentLocation = GET driver.currentLocation
+        ongoingAssignment = GET driver.currentAssignment
+        DISPLAY driverStatus, currentLocation, ongoingAssignment
+    ENDFOR
+    RETURN driverStatus, currentLocation, ongoingAssignment
+
+FUNCTION GenerateReports:
+    inventoryTurnoverRatio = CALCULATE InventoryTurnoverRatio()
+    truckTurnaroundTime = CALCULATE TruckTurnaroundTime()
+    avgTransportCost = CALCULATE AvgTransportationCost()
+    operatingRatio = CALCULATE OperatingRatio()
+    DISPLAY "Inventory Turnover Ratio:", inventoryTurnoverRatio
+    DISPLAY "Truck Turnaround Time:", truckTurnaroundTime
+    DISPLAY "Average Transportation Cost:", avgTransportCost
+    DISPLAY "Operating Ratio:", operatingRatio
+
+    FUNCTION GenerateTripLogReports:
+        FOR each trip IN trips:
+            routeDetails = GET trip.routeDetails
+            timestamps = GET trip.timestamps
+            DISPLAY "Trip ID: " + trip.id
+            DISPLAY "Route Details: " + routeDetails
+            DISPLAY "Timestamps: " + timestamps
+        ENDFOR
+        RETURN tripLogReports
+
+FUNCTION ExecuteAdminFeatures:
+    CALL AdminDashboard()
+    CALL VehicleManagementAndMaintenance()
+    CALL ManageFuelAndVehicleConsumption()
+    CALL DriverManagement()
+    CALL GenerateReports()
+    CALL GenerateTripLogReports()
+
+ExecuteAdminFeatures()
