@@ -1,0 +1,101 @@
+Order_ID,User_ID,Shipment_Size,Vehicle_Type,Payment_Method,Order_Status,Rating,Review
+101,2,Bulk Order,Truck,Credit Card,Delivered,4.5,Timely and safe delivery.
+102,3,Small Parcel,Van,UPI,Cancelled,,
+103,4,Special Cargo,Specialized Carrier,Mobile Wallet,In Progress,5.0,Excellent handling of fragile items.
+104,5,Small Parcel,Van,Cash on Delivery,Delivered,3.8,Satisfactory service.
+105,6,Bulk Order,Truck,Debit Card,In Progress,,
+106,7,Special Cargo,Specialized Carrier,Credit Card,Cancelled,,
+107,8,Small Parcel,Van,Mobile Wallet,Delivered,4.2,Fast and reliable.
+108,9,Bulk Order,Truck,UPI,In Progress,,
+109,10,Special Cargo,Specialized Carrier,Mobile Wallet,Delivered,4.9,Exceptional care for fragile goods.
+110,11,Small Parcel,Van,Debit Card,Delivered,3.5,Average experience.
+111,12,Bulk Order,Truck,Credit Card,Delivered,4.5,Timely and safe delivery.
+112,13,Small Parcel,Van,UPI,Cancelled,,
+113,14,Special Cargo,Specialized Carrier,Mobile Wallet,In Progress,5.0,Excellent handling of fragile items.
+114,15,Small Parcel,Van,Cash on Delivery,Delivered,3.8,Satisfactory service.
+115,16,Bulk Order,Truck,Debit Card,In Progress,,
+116,17,Special Cargo,Specialized Carrier,Credit Card,Cancelled,,
+117,18,Small Parcel,Van,Mobile Wallet,Delivered,4.2,Fast and reliable.
+118,19,Bulk Order,Truck,UPI,In Progress,,
+119,20,Special Cargo,Specialized Carrier,Mobile Wallet,Delivered,4.9,Exceptional care for fragile goods.
+120,21,Small Parcel,Van,Debit Card,Delivered,3.5,Average experience.
+121,22,Bulk Order,Truck,Credit Card,Delivered,4.5,Timely and safe delivery.
+122,23,Small Parcel,Van,UPI,Cancelled,,
+123,24,Special Cargo,Specialized Carrier,Mobile Wallet,In Progress,5.0,Excellent handling of fragile items.
+124,25,Small Parcel,Van,Cash on Delivery,Delivered,3.8,Satisfactory service.
+125,26,Bulk Order,Truck,Debit Card,In Progress,,
+126,27,Special Cargo,Specialized Carrier,Credit Card,Cancelled,,
+127,28,Small Parcel,Van,Mobile Wallet,Delivered,4.2,Fast and reliable.
+128,29,Bulk Order,Truck,UPI,In Progress,,
+129,30,Special Cargo,Specialized Carrier,Mobile Wallet,Delivered,4.9,Exceptional care for fragile goods.
+130,31,Small Parcel,Van,Debit Card,Delivered,3.5,Average experience.
+131,32,Bulk Order,Truck,Credit Card,Delivered,4.5,Timely and safe delivery.
+132,33,Small Parcel,Van,UPI,Cancelled,,
+133,34,Special Cargo,Specialized Carrier,Mobile Wallet,In Progress,5.0,Excellent handling of fragile items.
+134,35,Small Parcel,Van,Cash on Delivery,Delivered,3.8,Satisfactory service.
+135,36,Bulk Order,Truck,Debit Card,In Progress,,
+136,37,Special Cargo,Specialized Carrier,Credit Card,Cancelled,,
+137,38,Small Parcel,Van,Mobile Wallet,Delivered,4.2,Fast and reliable.
+138,39,Bulk Order,Truck,UPI,In Progress,,
+139,40,Special Cargo,Specialized Carrier,Mobile Wallet,Delivered,4.9,Exceptional care for fragile goods.
+140,41,Small Parcel,Van,Debit Card,Delivered,3.5,Average experience.
+141,42,Bulk Order,Truck,Credit Card,Delivered,4.5,Timely and safe delivery.
+142,43,Small Parcel,Van,UPI,Cancelled,,
+143,44,Special Cargo,Specialized Carrier,Mobile Wallet,In Progress,5.0,Excellent handling of fragile items.
+144,45,Small Parcel,Van,Cash on Delivery,Delivered,3.8,Satisfactory service.
+145,46,Bulk Order,Truck,Debit Card,In Progress,,
+146,47,Special Cargo,Specialized Carrier,Credit Card,Cancelled,,
+147,48,Small Parcel,Van,Mobile Wallet,Delivered,4.2,Fast and reliable.
+148,49,Bulk Order,Truck,UPI,In Progress,,
+149,50,Special Cargo,Specialized Carrier,Mobile Wallet,Delivered,4.9,Exceptional care for fragile goods.
+150,1,Small Parcel,Van,Debit Card,Delivered,3.5,Average experience.
+151,2,Bulk Order,Truck,Credit Card,Delivered,4.5,Timely and safe delivery.
+152,3,Small Parcel,Van,UPI,Cancelled,,
+153,4,Special Cargo,Specialized Carrier,Mobile Wallet,In Progress,5.0,Excellent handling of fragile items.
+154,5,Small Parcel,Van,Cash on Delivery,Delivered,3.8,Satisfactory service.
+155,6,Bulk Order,Truck,Debit Card,In Progress,,
+156,7,Special Cargo,Specialized Carrier,Credit Card,Cancelled,,
+157,8,Small Parcel,Van,Mobile Wallet,Delivered,4.2,Fast and reliable.
+158,9,Bulk Order,Truck,UPI,In Progress,,
+159,10,Special Cargo,Specialized Carrier,Mobile Wallet,Delivered,4.9,Exceptional care for fragile goods.
+160,11,Small Parcel,Van,Debit Card,Delivered,3.5,Average experience.
+161,12,Bulk Order,Truck,Credit Card,Delivered,4.5,Timely and safe delivery.
+162,13,Small Parcel,Van,UPI,Cancelled,,
+163,14,Special Cargo,Specialized Carrier,Mobile Wallet,In Progress,5.0,Excellent handling of fragile items.
+164,15,Small Parcel,Van,Cash on Delivery,Delivered,3.8,Satisfactory service.
+165,16,Bulk Order,Truck,Debit Card,In Progress,,
+166,17,Special Cargo,Specialized Carrier,Credit Card,Cancelled,,
+167,18,Small Parcel,Van,Mobile Wallet,Delivered,4.2,Fast and reliable.
+168,19,Bulk Order,Truck,UPI,In Progress,,
+169,20,Special Cargo,Specialized Carrier,Mobile Wallet,Delivered,4.9,Exceptional care for fragile goods.
+170,21,Small Parcel,Van,Debit Card,Delivered,3.5,Average experience.
+171,22,Bulk Order,Truck,Credit Card,Delivered,4.5,Timely and safe delivery.
+172,23,Small Parcel,Van,UPI,Cancelled,,
+173,24,Special Cargo,Specialized Carrier,Mobile Wallet,In Progress,5.0,Excellent handling of fragile items.
+174,25,Small Parcel,Van,Cash on Delivery,Delivered,3.8,Satisfactory service.
+175,26,Bulk Order,Truck,Debit Card,In Progress,,
+176,27,Special Cargo,Specialized Carrier,Credit Card,Cancelled,,
+177,28,Small Parcel,Van,Mobile Wallet,Delivered,4.2,Fast and reliable.
+178,29,Bulk Order,Truck,UPI,In Progress,,
+179,30,Special Cargo,Specialized Carrier,Mobile Wallet,Delivered,4.9,Exceptional care for fragile goods.
+180,31,Small Parcel,Van,Debit Card,Delivered,3.5,Average experience.
+181,32,Bulk Order,Truck,Credit Card,Delivered,4.5,Timely and safe delivery.
+182,33,Small Parcel,Van,UPI,Cancelled,,
+183,34,Special Cargo,Specialized Carrier,Mobile Wallet,In Progress,5.0,Excellent handling of fragile items.
+184,35,Small Parcel,Van,Cash on Delivery,Delivered,3.8,Satisfactory service.
+185,36,Bulk Order,Truck,Debit Card,In Progress,,
+186,37,Special Cargo,Specialized Carrier,Credit Card,Cancelled,,
+187,38,Small Parcel,Van,Mobile Wallet,Delivered,4.2,Fast and reliable.
+188,39,Bulk Order,Truck,UPI,In Progress,,
+189,40,Special Cargo,Specialized Carrier,Mobile Wallet,Delivered,4.9,Exceptional care for fragile goods.
+190,41,Small Parcel,Van,Debit Card,Delivered,3.5,Average experience.
+191,42,Bulk Order,Truck,Credit Card,Delivered,4.5,Timely and safe delivery.
+192,43,Small Parcel,Van,UPI,Cancelled,,
+193,44,Special Cargo,Specialized Carrier,Mobile Wallet,In Progress,5.0,Excellent handling of fragile items.
+194,45,Small Parcel,Van,Cash on Delivery,Delivered,3.8,Satisfactory service.
+195,46,Bulk Order,Truck,Debit Card,In Progress,,
+196,47,Special Cargo,Specialized Carrier,Credit Card,Cancelled,,
+197,48,Small Parcel,Van,Mobile Wallet,Delivered,4.2,Fast and reliable.
+198,49,Bulk Order,Truck,UPI,In Progress,,
+199,50,Special Cargo,Specialized Carrier,Mobile Wallet,Delivered,4.9,Exceptional care for fragile goods.
+200,1,Small Parcel,Van,Debit Card,Delivered,3.5,Average experience.
