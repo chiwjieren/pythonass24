@@ -1,0 +1,393 @@
+START
+
+    INITIAL SEED = 1234
+
+    FUNCTION main()
+        SET seed = INITIAL SEED
+        WHILE TRUE:
+            DISPLAY "Select an option:"
+            DISPLAY "1. Orders"
+            DISPLAY "2. Ratings and Reviews"
+            DISPLAY "3. Exit"
+
+            INPUT user_choice
+            
+            IF user_choice == 1:
+                SET seed = CALL order_management(seed)
+            ELSE IF user_choice == 2:
+                CALL ratings_and_reviews()
+            ELSE IF user_choice == 3:
+                DISPLAY "Exiting the system. BYE!"
+                BREAK
+            ELSE:
+                DISPLAY "Invalid choice. Please try again."
+            END IF
+        END WHILE
+    END FUNCTION
+
+    FUNCTION order_management(seed)
+        WHILE TRUE:
+            DISPLAY "Order Management - Select an option:"
+            DISPLAY "1. New Order"
+            DISPLAY "2. Cancel Order"
+            DISPLAY "3. Order Received"
+            DISPLAY "4. Reorder an Order"
+            DISPLAY "5. View Ongoing Orders"
+            DISPLAY "6. View Cancelled Orders"
+            DISPLAY "7. View Completed Orders"
+            DISPLAY "8. Back to Main Menu"
+
+            INPUT choice
+            
+            IF choice == 1:
+                SET seed = CALL new_order(seed)
+            ELSE IF choice == 2:
+                CALL input_cancel_order()
+            ELSE IF choice == 3:
+                CALL input_received_order()
+            ELSE IF choice == 4:
+                SET seed = CALL reorder_order(seed)
+            ELSE IF choice == 5:
+                CALL view_ongoing_orders("ongoingorder.txt")
+            ELSE IF choice == 6:
+                CALL view_cancelled_orders("cancelledorder.txt")
+            ELSE IF choice == 7:
+                CALL view_completed_orders("completedorder.txt")
+            ELSE IF choice == 8:
+                BREAK
+            ELSE:
+                DISPLAY "Invalid choice. Please try again."
+            END IF
+        END WHILE
+        RETURN seed
+    END FUNCTION
+
+    FUNCTION new_order(seed)
+        INPUT item_name
+        INPUT volume_per_item
+        INPUT weight_per_item
+        INPUT quantity 
+        INPUT ship_from
+        INPUT ship_to
+        INPUT sender_name 
+        INPUT sender_phone 
+        INPUT recipient_name
+        INPUT recipient_phone
+        INPUT purchase_date 
+
+        ASSIGN total_volume = volume_per_item * quantity
+        ASSIGN total_weight = weight_per_item * quantity
+
+        ASSIGN recommended_vehicle = CALL choose_vehicle(total_volume, total_weight)
+        DISPLAY "Recommended Vehicle:", recommended_vehicle
+
+        INPUT payment_option 
+
+        ASSIGN order_id, seed = CALL generate_order_id(seed)
+        DISPLAY "Order successfully placed! Your Order ID:", order_id
+
+        CALL save_to_ongoing_orders(order_id, item_name, quantity, ship_to, ship_from, sender_name, sender_phone, recipient_name, recipient_phone, recommended_vehicle, payment_option, "Ongoing", purchase_date)
+        
+        RETURN seed
+    END FUNCTION
+
+    FUNCTION choose_vehicle(total_volume, total_weight)
+        IF total_volume <= 0.027 AND total_weight <= 10:
+            RETURN "Motorcycle"
+        ELSE IF total_volume <= 0.125 AND total_weight <= 40:
+            RETURN "Car"
+        ELSE IF total_volume <= 2.04 AND total_weight <= 500:
+            RETURN "Van"
+        ELSE:
+            RETURN "Lorry"
+        END IF
+    END FUNCTION
+
+    FUNCTION view_ongoing_orders(file_path)
+        REPEAT
+            OPEN file_path 
+            READ file_path
+            DISPLAY file 
+            CLOSE file_path
+        UNTIL FileNotFoundError
+            DISPLAY "Error: The file was not found!"
+        END REPEAT
+    END FUNCTION
+
+    FUNCTION view_cancelled_orders(file_path)
+        REPEAT
+            OPEN file_path
+            READ file_path
+            DISPLAY file 
+            CLOSE file_path
+        UNTIL FileNotFoundError
+            DISPLAY "Error: The file was not found!"
+        END REPEAT
+    END FUNCTION
+
+    FUNCTION view_completed_orders(file_path)
+        REPEAT
+            OPEN file_path
+            READ file_path 
+            DISPLAY file
+            CLOSE file_path
+        UNTIL FileNotFoundError
+            DISPLAY "Error: The file was not found!"
+        END REPEAT
+    END FUNCTION
+
+    FUNCTION save_to_ongoing_orders(order_id, item_name, quantity, ship_to, ship_from, sender_name, sender_phone, recipient_name, recipient_phone, vehicle, payment_option, status, purchase_date)
+        OPEN ongoingorder.txt 
+        READ ongoingorder.txt 
+        IF file == 0
+            ASSIGN header = "OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,RecipientName,RecipientPhone,Vehicle,PaymentOption,Status,PurchaseDate"
+            WRITE header to file
+        END IF
+        CLOSE ongoingorder.txt
+        ASSIGN entry = "{order_id},{item_name},{quantity},{ship_to},{ship_from},{sender_name},{sender_phone},{recipient_name},{recipient_phone},{vehicle},{payment_option},{status},{purchase_date}"
+        WRITE entry to file
+    END FUNCTION
+
+    FUNCTION input_cancel_order()
+        INPUT order_id
+        INPUT cancel_date
+        CALL cancel_order(order_id, cancel_date)
+    END FUNCTION
+
+    FUNCTION cancel_order(order_id, cancel_date)
+        OPEN cancelledorder.txt
+        READ cancelledorder.txt
+        IF file == 0 
+            ASSIGN header = "OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,RecipientName,RecipientPhone,Vehicle,PaymentOption,Status,PurchaseDate,CancellationDate,ReviewStatus"
+            WRITE header to file
+        END IF 
+        CLOSE cancelledorder.txt
+        REPEAT
+            OPEN ongoingorder.txt 
+            READ ongoingorder.txt
+            FOR order in ongoing orders
+                IF order_id = order
+                    ASSIGN status = "Cancelled"
+                    APPEND cancel_date
+                    APPEND "Tobereview"  
+                    REMOVE order from ongoing orders
+                    WRITE order to cancelledorder.txt  
+                    DISPLAY "Order has been cancelled. Refund will be processed soon."
+                    BREAK
+                END IF
+            END FOR 
+            CLOSE ongoingorder.txt
+            OPEN ongoingorder.txt
+            WRITE updated ongoing orders to file
+            CLOSE ongoingorder.txt
+        UNTIL FileNotFoundError
+            DISPLAY "Error: The file was not found!"
+        END REPEAT
+    END FUNCTION
+
+    FUNCTION input_received_order()
+        INPUT order_id
+        INPUT received_date   
+        CALL order_received(order_id, received_date)
+    END FUNCTION
+
+    FUNCTION order_received(order_id, received_date)
+        OPEN completedorder.txt
+        READ completedorder.txt
+        IF file == 0
+            ASSIGN header = "OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,RecipientName,RecipientPhone,Vehicle,PaymentOption,Status,PurchaseDate,ReceivedDate,ReviewStatus"
+            WRITE header to file
+        END IF
+        REPEAT
+            READ ongoingorder.txt 
+            FOR order in ongoing orders
+                IF order_id = order
+                    ASSIGN status = "Completed"
+                    APPEND received_date
+                    APPEND "Tobereview"
+                    WRITE order to completed.txt
+                    REMOVE order from ongoing orders
+                    DISPLAY "Order has been completed"
+                    BREAK
+                END IF 
+            END FOR
+            OPEN ongoingorder.txt
+            WRITE ongoing orders to file
+            CLOSE ongoingorder.txt
+        UNTIL FileNotFoundError:
+            DISPLAY "Error: The file was not found!"
+        END REPEAT
+    END FUNCTION
+
+    FUNCTION reorder_order(seed)
+        INPUT order_id
+        ASSIGN found_order = FALSE
+        ASSIGN order_details = NULL
+
+        REPEAT
+            OPEN cancelledorder.txt
+            READ cancelledorder.txt
+            FOR each line in file
+                IF order_id in line matches
+                    ASSIGN order_details = line.strip.split
+                    found_order = TRUE
+                    BREAK
+                END If
+            END FOR
+            CLOSE cancelledorder.txt
+        END REPEAT
+
+        IF NOT found_order
+            OPEN completedorder.txt
+            READ completedorder.txt
+            FOR each line
+                IF order_id in line matches
+                    ASSIGN order_details = line.strip.split
+                    found_order = TRUE
+                    BREAK
+                END IF
+            END FOR
+            CLOSE completedorder.txt
+        END IF
+             
+        IF found_order
+            item_name = order_details[1]
+            quantity = order_details[2]
+            ship_to = order_details[3]
+            ship_from = order_details[4]
+            sender_name = order_details[5]
+            sender_phone = order_details[6]
+            recipient_name = order_details[7]
+            recipient_phone = order_details[8]
+            vehicle = order_details[9]
+            payment_option = order_details[10]
+            INPUT purchase_date
+            ASSIGN new_order_id, seed = CALL generate_order_id(seed)
+            DISPLAY "Reorder successfully placed! New Order ID:", new_order_id
+            CALL save_to_ongoing_orders(new_order_id, item_name, quantity, ship_to, ship_from, sender_name, sender_phone, recipient_name, recipient_phone, vehicle, payment_option, "Ongoing", purchase_date)
+        ELSE
+            DISPLAY "Order ID not found in cancelled or completed orders."
+        END IF 
+        RETURN seed
+    END FUNCTION
+
+    FUNCTION generate_order_id(seed)
+        ASSIGN existing_ids = SET()
+
+        REPEAT
+            OPEN order_ids.txt
+            READ order_ids.txt
+            FOR each line in file
+                ADD line to existing_ids
+            END FOR 
+            CLOSE order_ids.txt
+        END REPEAT
+
+        WHILE TRUE
+            ASSIGN seed = (seed * 48271) % 9999
+            ASSIGN order_id = format seed as 4 digit string
+
+            IF order_id NOT in existing_ids
+                OPEN "order_ids.txt" 
+                WRITE order_id to file
+                RETURN order_id, seed
+            END IF 
+        END WHILE
+    END FUNCTION 
+
+    FUNCTION update_review_status(file_path, order_id)
+        REPEAT
+            OPEN file_path
+            READ file_path
+            FOR each line:
+                IF order_id matches
+                    ASSIGN ReviewStatus to "Reviewed"
+                    WRITE updated line to file
+                END IF 
+            END FOR 
+            CLOSE file_path
+        UNTIL FileNotFoundError
+            DISPLAY "Error: The file was not found!"
+    END FUNCTION
+
+    FUNCTION save_review(order_id, review_text, rating, stars)
+        OPEN reviewed.txt
+        IF file == 0
+            ASSIGN header =  "OrderID,Review,Rating,Stars"
+            WRITE header to file
+        END IF 
+        ASSIGN entry = "{order_id},{review_text},{rating},{stars}"
+        WRITE entry to file
+        CLOSE reviewed.txt
+    END FUNCTION
+
+    FUNCTION ratings_and_reviews()
+        INPUT review_choice
+
+        IF review_choice == 1
+            CALL input_to_be_reviewed()
+        ELSE IF review_choice == 2
+            CALL view_reviewed("reviewed.txt")
+        ELSE:
+            DISPLAY "Invalid choice."
+    END FUNCTION
+
+    FUNCTION input_to_be_reviewed()
+        INPUT order_id 
+        ASSIGN found_order = FALSE
+        ASSIGN order_details = NULL
+        ASSIGN file_path = NULL
+
+        REPEAT
+            OPEN completedorder.txt
+            READ completedorder.txt
+            FOR each line
+                IF order_id matches
+                    ASSIGN order_details = line.strip.split
+                    found_order = TRUE
+                    file_path = completedorder.txt
+                    BREAK
+                END IF 
+            END FOR
+            CLOSE completedorder.txt
+        END REPEAT
+
+        IF not found_order 
+            OPEN cancelledorder.txt
+            READ cancelledorder.txt
+            FOR each line
+                IF order_id matches
+                    ASSIGN order_details = line.strip.split
+                    found_order = TRUE
+                    file_path = "cancelledorder.txt"
+                    BREAK
+                END IF
+            END FOR
+            CLOSE cancelledorder.txt
+        END IF
+
+        IF found_order = TRUE
+            INPUT review_text 
+            INPUT rating
+            ASSIGN stars = "*" * rating
+
+            CALL save_review(order_id, review_text, rating, stars)
+            CALL update_review_status(file_path, order_id)
+            DISPLAY "Thank you for your review!"
+        ELSE:
+            DISPLAY "Order not found or has already been reviewed."
+        END IF
+    END FUNCTION
+
+    FUNCTION view_reviewed(file_path)
+        REPEAT
+            OPEN file_path
+            READ file_path
+            DISPLAY file contents
+            CLOSE file_path
+        UNTIL FileNotFoundError:
+            DISPLAY "Error: The file was not found!"
+        END REPEAT
+    END FUNCTION
+END 
+
