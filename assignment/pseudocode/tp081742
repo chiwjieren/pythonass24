@@ -1,0 +1,34 @@
+START 
+
+ set ‘driver Profile’ (driverID, newInfo):
+driver = getDriverByID(driverID)
+if driver exists:
+for each field in newInfo:
+driver.field = newInfo[field]
+save DriverProfile(driver)
+return "Profile updated successfully"
+else:
+return "Driver not found"
+
+END
+
+
+START
+
+set  ‘getShipmentDetails’ (driverID, shipmentID):
+shipment = getShipmentByID(shipmentID)
+if shipment assigned to driverID:
+  packageInfo = shipment.getPackageID
+  freightInfo = shipment.getFreightDetails
+  routeInfo = shipment.getRouteDetails
+  estimatedDuration = calculateTimeToDestination(routeInfo)
+return {
+"Package Info": packageID,
+"Freight Info": freightInfo,
+"Route Info": routeInfo,
+"Estimated Duration": estimatedDuration
+}
+else:
+return "Shipment not assigned to  driver"
+
+END
