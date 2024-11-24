@@ -1,0 +1,108 @@
+START 
+CLASS DriverINFO 
+    FUNCTION Initialize(name, driverID, contact_info, address, availability_status, driving_license, health_report)
+//d = driver 
+        SET d.name = name
+        SET d.driverID = driverID 
+        SET d.contact_info = contact_info
+        SET d.address = address
+        SET d.availability_status = availability_status
+        SET d.driving_license = driving_license
+        SET d.health_report = health_report
+    END FUNCTION
+
+    FUNCTION UpdateProfile(name, driverID, contact_info, address, availability_status, driving_license, health_report)
+        IF name is entered THEN
+            SET d.name = name
+        END IF
+        IF contact_info is entered THEN
+            SET d.contact_info = contact_info
+        END IF
+        IF address is entered THEN
+            SET d.address = address
+        END IF
+        IF availability_status is entered THEN
+            SET d.availability_status = availability_status
+        END IF
+        IF driving_license is entered THEN
+            SET d.driving_license = driving_license
+        END IF
+        IF health_report is entered THEN
+            SET d.health_report = health_report
+        END IF
+        IF driverID is entered THEN
+            SET d.driverID = driverID           
+    END FUNCTION
+
+    FUNCTION DisplayProfile()
+        RETURN {
+            "Name": d.name,
+            "Contact Info": d.contact_info,
+            "Address": d.address,
+            "Availability Status": d.availability_status,
+            "Driving License": d.driving_license,
+            "Health Report": d.health_report
+            "Driver ID": d.driverID
+            }
+      print(" driver profile is updated ") 
+    END FUNCTION
+END 
+
+START
+CLASS Shipment //s=shipment 
+    FUNCTION Initialize( package_weight, special_requirements, route_details, time_duration)
+        SET s.package_weight = package_weight
+        SET s.special_requirements = special_requirement 
+        SET s.route_details = route_details
+        SET s.time_duration = time_duration
+    END FUNCTION
+
+    FUNCTION DisplayShipmentDetails()
+        RETURN {
+            "Package Weight": s.package_weight,
+            "Special Requirements": s.special_requirements,
+            "Route Details": s.route_details,
+            "Time Duration": s.time_duration
+        }
+    END FUNCTION
+END CLASS
+
+CLASS Route
+    FUNCTION Initialize(route_name, stopover_time)
+        SET this.route_name = route_name
+        SET this.stopover_time = stopover_time
+    END FUNCTION
+
+    FUNCTION CalculateTurnaroundTime(travel_time)
+        RETURN travel_time + (this.stopover_time * 2)  // Assuming stopover at both ends
+    END FUNCTION
+END CLASS
+END 
+
+START 
+FUNCTION Main()
+    // Create a driver profile
+    SET driver = NEW Driver("John Doe", "123-456-7890", "123 Main St, Johor", TRUE, "D1234567", "Healthy")
+    
+    // Update driver profile
+    CALL driver.UpdateProfile(contact_info="098-765-4321", availability_status=FALSE)
+    
+    // Display driver profile
+    PRINT "Driver Profile:", CALL driver.DisplayProfile()
+    
+    // Create shipment details
+    SET shipment = NEW Shipment(150, "Fragile", "Standard", "Johor to Kuala Lumpur", 5)
+    
+    // Display shipment details
+    PRINT "Shipment Details:", CALL shipment.DisplayShipmentDetails()
+    
+    // Define routes
+    SET route1 = NEW Route("Johor – Kuala Lumpur – Butterworth - Kedah – Perlis", 60)  // 60 minutes stopover
+    SET route2 = NEW Route("Johor – Kuala Lumpur – Terengganu – Kelantan", 60)
+    
+    // Calculate turnaround time for Route 1
+    SET travel_time = 300  // Example travel time in minutes
+    SET turnaround_time_route1 = CALL route1.CalculateTurnaroundTime(travel_time)
+    PRINT "Turnaround Time for", route1.route_name, ":", turnaround_time_route1, "minutes"
+END FUNCTION
+END 
