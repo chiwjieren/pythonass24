@@ -61,7 +61,16 @@ END FUNCTION
 END
 
 START 
-FUNCTION ManageShipment() 
+FUNCTION Shipment() 
+open .txt
+open .txt
+read if file tells ==0 
+header = ""
+write.header
+read .txt add details[x] x=12345 to .txt
+open read diplay file close file_path 
+
+
     // Shipment Delivery Details
         INPUT package_weight 
         INPUT special_requirements
