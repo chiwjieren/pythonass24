@@ -1,0 +1,91 @@
+    FUNCTION ManageDriverProfile()
+        // Driver Profile Management
+        INPUT name 
+        INPUT contact_info
+        INPUT address
+        INPUT availability_status
+        INPUT driving_license
+        INPUT health_report
+    READ DriverID from driver.txt 
+    // Update driver profile
+    FUNCTION UpdateDriverProfile(name, contact_info, address, availability_status, driving_license, health_report)
+        IF name IS NOT NULL THEN
+            SET driverProfile["name"] = name
+        END IF
+        IF contact_info IS NOT NULL THEN
+            SET driverProfile["contact_info"] = contact_info
+        END IF
+        IF address IS NOT NULL THEN
+            SET driverProfile["address"] = address
+        END IF
+        IF availability_status IS NOT NULL THEN
+            SET driverProfile["availability_status"] = availability_status
+        END IF
+        IF driving_license IS NOT NULL THEN
+            SET driverProfile["driving_license"] = driving_license
+        END IF
+        IF health_report IS NOT NULL THEN
+            SET driverProfile["health_report"] = health_report
+        END IF
+    END FUNCTION
+
+    // Display driver profile
+    FUNCTION DisplayDriverProfile()
+        PRINT "Driver Profile:"
+        PRINT "DriverID", driverID
+        PRINT "Name: ", driverProfile["name"]
+        PRINT "Contact Info: ", driverProfile["contact_info"]
+        PRINT "Address: ", driverProfile["address"]
+        PRINT "Availability Status: ", driverProfile["availability_status"]
+        PRINT "Driving License: ", driverProfile["driving_license"]
+        PRINT "Health Report: ", driverProfile["health_report"]
+    END FUNCTION
+
+    // Update and display the profile
+    CALL UpdateDriverProfile(NULL, "098-765-4321", NULL, FALSE, NULL, NULL)
+    CALL DisplayDriverProfile()
+END FUNCTION
+
+FUNCTION ManageShipment()
+    // Shipment Delivery Details
+    DECLARE shipmentDetails AS DICTIONARY
+    SET shipmentDetails["package_weight"] = 150
+    SET shipmentDetails["special_requirements"] = "Fragile"
+    SET shipmentDetails["freight_details"] = "Standard"
+    SET shipmentDetails["route_details"] = "Johor to Kuala Lumpur"
+    SET shipmentDetails["time_duration"] = 5
+
+    // Display shipment details
+    PRINT "Shipment Details:"
+    PRINT "Package Weight: ", shipmentDetails["package_weight"]
+    PRINT "Special Requirements: ", shipmentDetails["special_requirements"]
+    PRINT "Freight Details: ", shipmentDetails["freight_details"]
+    PRINT "Route Details: ", shipmentDetails["route_details"]
+    PRINT "Time Duration: ", shipmentDetails["time_duration"]
+END FUNCTION
+
+FUNCTION ManageRoutes()
+    // Define Routes
+    DECLARE routes AS LIST
+    APPEND routes WITH ("Route 1: Johor – Kuala Lumpur – Butterworth - Kedah – Perlis", 30)
+    APPEND routes WITH ("Route 2: Johor – Kuala Lumpur – Terengganu – Kelantan", 30)
+
+    // Calculate Turnaround Time
+    FUNCTION CalculateTurnaroundTime(route, travel_time)
+        DECLARE stopover_time AS INTEGER
+        SET stopover_time = route[1]  // Get stopover time from route
+        RETURN travel_time + (stopover_time * 2)  // Assuming stopover at both ends
+    END FUNCTION
+
+    // Example of calculating turnaround time for Route 1
+    DECLARE travel_time AS INTEGER
+    SET travel_time = 300  // Example travel time in minutes
+    DECLARE turnaround_time AS INTEGER
+    SET turnaround_time = CALL CalculateTurnaroundTime(routes[0], travel_time)
+    PRINT "Turnaround Time for ", routes[0][0], ": ", turnaround_time, " minutes"
+END FUNCTION
+
+// Main Execution
+CALL ManageDriverProfile()
+CALL ManageShipment()
+CALL ManageRoutes()
