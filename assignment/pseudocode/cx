@@ -50,7 +50,7 @@ END
 
 START
 CLASS Shipment //s=shipment 
-    FUNCTION Initialize( package_weight, special_requirements, route_details, time_duration)
+    FUNCTION Initialize( package_weight, special_requirements, route_details, time_duration,)
         SET s.package_weight = package_weight
         SET s.special_requirements = special_requirement 
         SET s.route_details = route_details
