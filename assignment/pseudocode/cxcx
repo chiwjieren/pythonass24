@@ -81,7 +81,6 @@ open read diplay file close file_path
     PRINT "Shipment Details:"
     PRINT "Package Weight: ", shipmentDetails["package_weight"]
     PRINT "Special Requirements: ", shipmentDetails["special_requirements"]
-    PRINT "Freight Details: ", shipmentDetails["freight_details"]
     PRINT "Route Details: ", shipmentDetails["route_details"]
     PRINT "Time Duration: ", shipmentDetails["time_duration"]
 END FUNCTION
@@ -95,7 +94,7 @@ FUNCTION ManageRoutes()
     // Calculate Turnaround Time
     FUNCTION CalculateTurnaroundTime(route, travel_time)
         DECLARE stopover_time AS INTEGER
-        SET stopover_time = route[1]  // Get stopover time from route
+         stopover_time = 60 minutes 
         RETURN travel_time + (stopover_time * 2)  // Assuming stopover at both ends
     END FUNCTION
 
