@@ -1,345 +1,634 @@
-# Initial seed (set to any starting integer)
-initial_seed = 1234
+# Define file names
+USER_FILE = "userdetails.txt"
+ONGOING_ORDER_FILE = "ongoingorder.txt"
+CANCELLED_ORDER_FILE = "cancelledorder.txt"
+COMPLETED_ORDER_FILE = "completedorder.txt"
+ORDER_ID_FILE = "order_ids.txt"
+REVIEWS_FILE = "reviews.txt"  # New file to store reviews
+TO_BE_REVIEWED_FILE = "tobereview.txt"
+REVIEWED_FILE = "reviewed.txt"
+
+# Utility function to read lines from a file
+def read_lines_from_file(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            return file.readlines()
+    except FileNotFoundError:
+        return []
+
+# Utility function to write lines to a file
+def write_lines_to_file(file_path, lines, header=None):
+    file_exists = False
+    try:
+        with open(file_path, 'r') as file:
+            first_char = file.read(1)
+            if first_char:
+                file_exists = True
+    except FileNotFoundError:
+        file_exists = False
+
+    with open(file_path, 'a') as file:
+        if not file_exists and header:
+            file.write(header)
+        file.writelines(lines)
 
 def main():
-    seed = initial_seed  # Use a local seed variable
+    userID = None
     while True:
-        print("Select an option:")
-        print("1. Orders")
-        print("2. Ratings and Reviews")
+        print("\nSelect an option:")
+        print("1. Sign Up")
+        print("2. Login")
         print("3. Exit")
 
-        user_choice = int(input("Enter choice: "))
+        try:
+            main_choice = int(input("Enter choice: "))
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+            continue
 
-        if user_choice == 1:
-            seed = order_management(seed)
-        elif user_choice == 2:
-            ratings_and_reviews()
-        elif user_choice == 3:
+        if main_choice == 1:
+            sign_up()
+        elif main_choice == 2:
+            userID = login()
+            if userID:
+                welcome(userID)
+            else:
+                print("Invalid login credentials. Try again.")
+        elif main_choice == 3:
             print("Exiting the system. BYE!")
             break
         else:
             print("Invalid choice. Please try again.")
 
-def order_management(seed):
+def sign_up():
+    username = input("Enter Username: ").strip()
+    password = input("Enter Password: ").strip()
+    user_id = generate_user_id()
+
+    user_data = f"U{user_id:03},{username},{password}\n"
+    header = "Username,UserID,Password\n"
+    write_lines_to_file(USER_FILE, [user_data], header)
+
+    print(f"User created successfully! Your User ID: U{user_id:03}")
+
+def login():
+    username = input("Enter Username: ").strip()
+    password = input("Enter Password: ").strip()
+
+    users = read_lines_from_file(USER_FILE)
+    if not users:
+        print("No users found. Please sign up first.")
+        return None
+
+    for user in users[1:]:  # Skip header
+        try:
+            stored_user_id, stored_username, stored_password = user.strip().split(",")
+            if stored_username == username and stored_password == password:
+                print(f"Login successful! Welcome {username}")
+                return stored_user_id
+        except ValueError:
+            # Handle lines that don't have enough fields
+            continue
+    return None
+
+def generate_user_id():
+    users = read_lines_from_file(USER_FILE)
+    if not users:
+        return 1  # First user
+    return len(users)  # Since header is first line
+
+def welcome(userID):
+    while True:
+        print("\nSelect an option:")
+        print("1. Orders")
+        print("2. Ratings and Reviews")
+        print("3. Log Out")
+
+        try:
+            user_choice = int(input("Enter choice: "))
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+            continue
+
+        if user_choice == 1:
+            order_management(userID)
+        elif user_choice == 2:
+            ratings_and_reviews(userID)
+        elif user_choice == 3:
+            print("Logging out...")
+            break
+        else:
+            print("Invalid choice. Please try again.")
+
+def order_management(userID):
     while True:
         print("\nOrder Management - Select an option:")
         print("1. New Order")
         print("2. Cancel Order")
         print("3. Order Received")
         print("4. Reorder an Order")
-        print("5. View Ongoing Orders")
-        print("6. View Cancelled Orders")
-        print("7. View Completed Orders")
-        print("8. Back to Main Menu")
+        print("5. View Orders")
+        print("6. Back to Main Menu")
 
-        choice = int(input("Enter choice: "))
+        try:
+            choice = int(input("Enter choice: "))
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+            continue
 
         if choice == 1:
-            seed = new_order(seed)
+            new_order(userID)
         elif choice == 2:
-            input_cancel_order()
+            cancel_order(userID)
         elif choice == 3:
-            input_received_order()
+            order_received(userID)
         elif choice == 4:
-            seed = reorder_order(seed)
+            reorder_order(userID)
         elif choice == 5:
-            view_ongoing_orders('ongoingorder.txt')
+            view_orders(userID)
         elif choice == 6:
-            view_cancelled_orders('cancelledorder.txt')
-        elif choice == 7:
-            view_completed_orders('completedorder.txt')
-        elif choice == 8:
             break
         else:
             print("Invalid choice. Please try again.")
-    return seed
 
-def new_order(seed):
-    item_name = input("Enter Item Name: ")
-    volume_per_item = float(input("Volume per Item (cubic meters): "))
-    weight_per_item = float(input("Weight per Item (kilograms): "))
-    quantity = int(input("Quantity: "))
-    ship_from = input("Shipping From Address: ")
-    ship_to = input("Shipping To Address: ")
-    sender_name = input("Sender Name: ")
-    sender_phone = input("Sender Phone: ")
-    recipient_name = input("Recipient Name: ")
-    recipient_phone = input("Recipient Phone: ")
-    purchase_date = input("Enter Purchase Date (YYYY-MM-DD): ")
+def new_order(userID):
+    locations = [
+        "Johor", "Kuala Lumpur", "Butterworth", "Kedah", "Perlis", 
+        "Terengganu", "Kelantan"
+    ]
+    # Collect order details
+    item_name = input("Enter Item Name: ").strip()
+    try:
+        quantity = int(input("Quantity: "))
+    except ValueError:
+        print("Invalid input for quantity. Must be a number.")
+        return
+    ship_from = print("Shipping From: ")
+    for i, location in enumerate(locations, 1):
+        print(f"{i}. {location}")
+    
+    try:
+        ship_from_choice = int(input("Enter your choice (1-7): "))
+        if ship_from_choice < 1 or ship_from_choice > len(locations):
+            print("Invalid choice. Please select a valid location.")
+            return
+        ship_from = locations[ship_from_choice - 1]
+    except ValueError:
+        print("Invalid input. Please enter a number.")
+        return
+    ship_to = print("Shipping To: ")
+    for i, location in enumerate(locations, 1):
+        print(f"{i}. {location}")
+    
+    try:
+        ship_to_choice = int(input("Enter your choice (1-7): "))
+        if ship_to_choice < 1 or ship_to_choice > len(locations):
+            print("Invalid choice. Please select a valid location.")
+            return
+        ship_to = locations[ship_to_choice - 1]
+    except ValueError:
+        print("Invalid input. Please enter a number.")
+        return
+    sender_name = input("Sender Name: ").strip()
+    sender_phone = input("Sender Phone: ").strip()
+    recipient_name = input("Recipient Name: ").strip()
+    recipient_phone = input("Recipient Phone: ").strip()
+    purchase_date = input("Enter Purchase Date (YYYY-MM-DD): ").strip()
 
-    total_volume = volume_per_item * quantity
-    total_weight = weight_per_item * quantity
+    # Let user select shipment size
+    print("Choose Shipment Size:")
+    print("1. Bulk Order (Fits in a car trunk)")
+    print("2. Small Parcel (Fits in a van)")
+    print("3. Special Cargo (Requires a truck)")
+    shipment_size_choice = input("Enter your choice (1-3): ").strip()
+    shipment_size = ""
+    if shipment_size_choice == "1":
+        shipment_size = "BulkOrder"
+    elif shipment_size_choice == "2":
+        shipment_size = "SmallParcel"
+    elif shipment_size_choice == "3":
+        shipment_size = "SpecialCargo"
+    else:
+        print("Invalid choice for shipment size.")
+        return
 
-    recommended_vehicle = choose_vehicle(total_volume, total_weight)
-    print("Recommended Vehicle:", recommended_vehicle)
+    # Let user select vehicle type
+    print("Choose Vehicle Type:")
+    print("1. Specialized Carrier")
+    print("2. Van")
+    print("3. Truck")
+    vehicle_choice_input = input("Enter your choice (1-3): ").strip()
+    vehicle_choice = ""
+    if vehicle_choice_input == "1":
+        vehicle_choice = "Specialized Carrier"
+    elif vehicle_choice_input == "2":
+        vehicle_choice = "Van"
+    elif vehicle_choice_input == "3":
+        vehicle_choice = "Truck"
+    else:
+        print("Invalid choice for vehicle type.")
+        return
 
-    payment_option = int(input("Choose a payment method:\n1. Credit/Debit Card\n2. UPI\n3. Mobile Wallet\n4. Cash On Delivery\n"))
+    # Select payment option
+    print("Choose Payment Method:")
+    print("1. Credit/Debit Card")
+    print("2. UPI")
+    print("3. Mobile Wallet")
+    print("4. Cash On Delivery")
+    payment_choice = input("Enter your choice (1-4): ").strip()
+    payment_option = ""
+    if payment_choice == "1":
+        payment_option = "Credit/Debit Card"
+    elif payment_choice == "2":
+        payment_option = "UPI"
+    elif payment_choice == "3":
+        payment_option = "Mobile Wallet"
+    elif payment_choice == "4":
+        payment_option = "Cash On Delivery"
+    else:
+        print("Invalid choice for payment method.")
+        return
 
-    order_id, seed = generate_order_id(seed)
+    # Generate order ID
+    order_id = generate_order_id()
     print("Order successfully placed! Your Order ID:", order_id)
 
-    save_to_ongoing_orders(order_id, item_name, quantity, ship_to, ship_from, sender_name, sender_phone, recipient_name, recipient_phone, recommended_vehicle, payment_option, "Ongoing", purchase_date)
-    return seed
+    # Save to ongoing orders
+    order_data = f"{order_id},{item_name},{quantity},{ship_to},{ship_from},{sender_name},{sender_phone},{recipient_name},{recipient_phone},{shipment_size},{vehicle_choice},{payment_option},Pending,{purchase_date},{userID}\n"
+    header = "OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,RecipientName,RecipientPhone,Shipment_size,Vehicle_choice,PaymentOption,Status,PurchaseDate,UserID\n"
+    write_lines_to_file(ONGOING_ORDER_FILE, [order_data], header)
 
-def choose_vehicle(total_volume, total_weight):
-    if total_volume <= 0.027 and total_weight <= 10:
-        return "Motorcycle"
-    elif total_volume <= 0.125 and total_weight <= 40:
-        return "Car"
-    elif total_volume <= 2.04 and total_weight <= 500:
-        return "Van"
-    else:
-        return "Lorry"
-
-def view_ongoing_orders(file_path):
-    try:
-        with open(file_path, 'r') as file:
-            print(file.read())
-    except FileNotFoundError:
-        print("Error: The file was not found!")
-
-def view_cancelled_orders(file_path):
-    try:
-        with open(file_path, 'r') as file:
-            print(file.read())
-    except FileNotFoundError:
-        print("Error: The file was not found!")
-
-def view_completed_orders(file_path):
-    try:
-        with open(file_path, 'r') as file:
-            print(file.read())
-    except FileNotFoundError:
-        print("Error: The file was not found!")
-
-def save_to_ongoing_orders(order_id, item_name, quantity, ship_to, ship_from, sender_name, sender_phone, recipient_name, recipient_phone, vehicle, payment_option, status, purchase_date):
-    with open("ongoingorder.txt", 'a') as file:
-        if file.tell() == 0:
-            header = "OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,RecipientName,RecipientPhone,Vehicle,PaymentOption,Status,PurchaseDate\n"
-            file.write(header)
-        
-        entry = f"{order_id},{item_name},{quantity},{ship_to},{ship_from},{sender_name},{sender_phone},{recipient_name},{recipient_phone},{vehicle},{payment_option},{status},{purchase_date}\n"
-        file.write(entry)
-
-def input_cancel_order():
-    order_id = input("Please enter the order ID you wish to cancel: ")
-    cancel_date = input("Enter Cancellation Date (YYYY-MM-DD): ")
-    cancel_order(order_id, cancel_date)
-
-def cancel_order(order_id, cancel_date):
-    with open("cancelledorder.txt", 'a') as file:
-        if file.tell() == 0:
-            header = "OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,RecipientName,RecipientPhone,Vehicle,PaymentOption,Status,PurchaseDate,CancellationDate,ReviewStatus\n"
-            file.write(header)
-    
-    try:
-        with open("ongoingorder.txt", 'r') as file:
-            ongoing_orders = file.readlines()
-
-        with open("cancelledorder.txt", 'a') as cancelled_file:
-            for order in ongoing_orders:
-                if order_id in order:
-                    # Change status to 'Cancelled' and review status to 'Tobereview' before saving
-                    order_details = order.strip().split(',')
-                    order_details[11] = "Cancelled"  # Status in column 12
-                    order_details.append(cancel_date)  # Append cancellation date
-                    order_details.append("Tobereview")  # Review status
-                    cancelled_file.write(','.join(order_details) + '\n')
-                    ongoing_orders.remove(order)
-                    print("Order", order_id, "has been cancelled. Refund will be processed soon.")
-                    break
-
-        with open("ongoingorder.txt", 'w') as file:
-            file.writelines(ongoing_orders)
-    except FileNotFoundError:
-        print("Error: The file was not found!")
-
-def input_received_order():
-    order_id = input("Please enter the order ID that you've collected: ")
-    received_date = input("Enter Received Date (YYYY-MM-DD): ")
-    order_received(order_id, received_date)
-
-def order_received(order_id, received_date):
-    with open("completedorder.txt", 'a') as file:
-        if file.tell() == 0:
-            header = "OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,RecipientName,RecipientPhone,Vehicle,PaymentOption,Status,PurchaseDate,ReceivedDate,ReviewStatus\n"
-            file.write(header)
-    
-    try:
-        with open("ongoingorder.txt", 'r') as file:
-            ongoing_orders = file.readlines()
-
-        with open("completedorder.txt", 'a') as completed_file:
-            for order in ongoing_orders:
-                if order_id in order:
-                    # Change status to 'Completed' and review status to 'Tobereview' before saving
-                    order_details = order.strip().split(',')
-                    order_details[11] = "Completed"  # Status in column 12
-                    order_details.append(received_date)  # Append received date
-                    order_details.append("Tobereview")  # Review status
-                    completed_file.write(','.join(order_details) + '\n')
-                    ongoing_orders.remove(order)
-                    print("Order", order_id, "has been completed. Thanks for choosing us.")
-                    break
-
-        with open("ongoingorder.txt", 'w') as file:
-            file.writelines(ongoing_orders)
-    except FileNotFoundError:
-        print("Error: The file was not found!")
-
-def reorder_order(seed):
-    order_id = input("Please enter the Order ID you wish to reorder: ")
-    found_order = False
-    order_details = None
-
-    # Check cancelled orders first
-    with open("cancelledorder.txt", 'r') as file:
-        for line in file:
-            if order_id in line:
-                order_details = line.strip().split(',')
-                found_order = True
-                break
-
-    # Check completed orders if not found in cancelled orders
-    if not found_order:
-        with open("completedorder.txt", 'r') as file:
-            for line in file:
-                if order_id in line:
-                    order_details = line.strip().split(',')
-                    found_order = True
-                    break
-
-    if found_order and order_details:
-        item_name = order_details[1]
-        quantity = int(order_details[2])
-        ship_to = order_details[3]
-        ship_from = order_details[4]
-        sender_name = order_details[5]
-        sender_phone = order_details[6]
-        recipient_name = order_details[7]
-        recipient_phone = order_details[8]
-        vehicle = order_details[9]
-        payment_option = int(order_details[10])
-
-        # Prompt for a new purchase date
-        purchase_date = input("Enter new Purchase Date for reorder (YYYY-MM-DD): ")
-
-        new_order_id, seed = generate_order_id(seed)
-        print("Reorder successfully placed! New Order ID:", new_order_id)
-        save_to_ongoing_orders(new_order_id, item_name, quantity, ship_to, ship_from, sender_name, sender_phone, recipient_name, recipient_phone, vehicle, payment_option, "Ongoing", purchase_date)
-
-    else:
-        print("Order ID not found in cancelled or completed orders.")
-    return seed
-
-def generate_order_id(seed):
-    # Read all existing order IDs from the file
-    existing_ids = set()
-    try:
-        with open("order_ids.txt", 'r') as file:
-            existing_ids = set(line.strip() for line in file)
-    except FileNotFoundError:
-        pass  # File doesn't exist yet, which is fine for the first run 
-
+def generate_order_id():
+    orders = read_lines_from_file(ORDER_ID_FILE)
+    existing_ids = set(line.strip() for line in orders)
+    order_id = 1
     while True:
-        # Generate a new order ID
-        seed = (seed * 48271) % 9999
-        order_id = str(seed).zfill(4)  # Ensures ID is always 4 digits
+        new_order_id = f"ORD{order_id:03}"
+        if new_order_id not in existing_ids:
+            break
+        order_id += 1
+    # Save the new order ID
+    write_lines_to_file(ORDER_ID_FILE, [f"{new_order_id}\n"])
+    return new_order_id, order_id +1
 
-        # Check if this order ID is already in use
-        if order_id not in existing_ids:
-            # Store the new order ID in the file for future reference
-            with open("order_ids.txt", 'a') as file:
-                file.write(order_id + '\n')
-            return order_id, seed
-        # If order_id exists, loop will retry with the next generated ID
+def view_orders(userID):
+    for file_name, status in [(ONGOING_ORDER_FILE, 'Ongoing'), (CANCELLED_ORDER_FILE, 'Cancelled'), (COMPLETED_ORDER_FILE, 'Completed')]:
+        print(f"\n{status} Orders for User {userID}:")
+        orders = read_lines_from_file(file_name)
+        if not orders or len(orders) <=1:
+            print(f"No {status.lower()} orders.")
+            continue
+        for order in orders[1:]:
+            order_details = order.strip().split(',')
+            if order_details[-1] == userID:
+                print(order)
 
-def update_review_status(file_path, order_id):
+def cancel_order(userID):
+    ongoing_orders = read_lines_from_file(ONGOING_ORDER_FILE)
+    if not ongoing_orders or len(ongoing_orders) <= 1:
+        print("No ongoing orders to mark as cancelled.")
+        return
+
+    user_orders = [order.strip().split(',') for order in ongoing_orders[1:] if order.strip().split(',')[-1] == userID]
+    if not user_orders:
+        print("No ongoing orders to mark as cancelled.")
+        return
+
+    print("\nOngoing Orders to Cancel:")
+    for i, order in enumerate(user_orders, start=1):
+        print(f"{i}. Order ID: {order[0]}, Item: {order[1]}, Quantity: {order[2]}, Status: {order[12]}")
+
     try:
-        with open(file_path, 'r') as file:
-            lines = file.readlines()
+        choice = int(input("Enter the order number to mark as cancelled or 0 to cancel: "))
+    except ValueError:
+        print("Invalid input.")
+        return
 
-        with open(file_path, 'w') as file:
-            for line in lines:
-                if order_id in line:
-                    # Update review status to "Reviewed"
-                    order_details = line.strip().split(',')
-                    order_details[-1] = "Reviewed"
-                    file.write(','.join(order_details) + '\n')
-                else:
-                    file.write(line)
-    except FileNotFoundError:
-        print("Error: The file was not found!")
+    if choice == 0:
+        return
+    elif 1 <= choice <= len(user_orders):
+        order_to_cancel = user_orders[choice - 1]
+        # Strip whitespace and compare status case-insensitively
+        if order_to_cancel[13].strip().lower() == 'pending':
+            order_to_cancel[13] = 'Cancelled'
+            cancelled_order_data = ','.join(order_to_cancel) + '\n'
+            header = "OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,RecipientName,RecipientPhone,Shipment_size,Vehicle_choice,PaymentOption,Status,PurchaseDate,UserID\n"
+            write_lines_to_file(CANCELLED_ORDER_FILE, [cancelled_order_data], header)
 
-def save_review(order_id, review_text, rating, stars):
-    with open("reviewed.txt", 'a') as file:
-        if file.tell() == 0:
-            header = "OrderID,Review,Rating,Stars\n"
-            file.write(header)
+            # Add order to tobereview file
+            to_be_reviewed_data = ','.join(order_to_cancel) + '\n'
+            write_lines_to_file(TO_BE_REVIEWED_FILE, [to_be_reviewed_data], header)
+            
+            # Update ongoing orders
+            updated_orders = [
+                order for order in ongoing_orders if order.strip().split(',')[0] != order_to_cancel[0]
+            ]
+            with open(ONGOING_ORDER_FILE, 'w') as file:
+                file.writelines(updated_orders)
 
-        entry = f"{order_id},{review_text},{rating},{stars}\n"
-        file.write(entry)
-
-def ratings_and_reviews():
-    review_choice = int(input("Ratings & Reviews:\n1. To Be Reviewed\n2. Reviewed\nEnter choice: "))
-
-    if review_choice == 1:
-        input_to_be_reviewed()
-    elif review_choice == 2:
-        view_reviewed('reviewed.txt')
+            print(f"Order {order_to_cancel[0]} has been marked as cancelled.")
+        else:
+            print(f"Order {order_to_cancel[0]} cannot be cancelled as it is not in 'Pending' status. Current status: {order_to_cancel[12]}")
     else:
         print("Invalid choice.")
 
-def input_to_be_reviewed():
-    order_id = input("Enter the Order ID you want to review: ")
-    found_order = False
-    order_details = None
-    file_path = None
+def order_received(userID):
+    ongoing_orders = read_lines_from_file(ONGOING_ORDER_FILE)
+    if not ongoing_orders or len(ongoing_orders) <= 1:
+        print("No ongoing orders to mark as completed.")
+        return
 
-    # Check cancelled orders first
-    with open("cancelledorder.txt", 'r') as file:
-        for line in file:
-            if order_id in line:
-                order_details = line.strip().split(',')
-                if order_details[-1] == "Tobereview":  # Check if review status is "Tobereview"
-                    found_order = True
-                    file_path = "cancelledorder.txt"
-                break
+    user_orders = [order.strip().split(',') for order in ongoing_orders[1:] if order.strip().split(',')[-1] == userID]
+    if not user_orders:
+        print("No ongoing orders to mark as completed.")
+        return
 
-    # Check completed orders if not found in cancelled orders
-    if not found_order:
-        with open("completedorder.txt", 'r') as file:
-            for line in file:
-                if order_id in line:
-                    order_details = line.strip().split(',')
-                    if order_details[-1] == "Tobereview":  # Check if review status is "Tobereview"
-                        found_order = True
-                        file_path = "completedorder.txt"
-                    break
+    print("\nOngoing Orders to Mark as Completed:")
+    for i, order in enumerate(user_orders, start=1):
+        print(f"{i}. Order ID: {order[0]}, Item: {order[1]}, Quantity: {order[2]}")
 
-    if found_order and order_details:
-        # Collect user review and rating
-        review_text = input("Enter your review: ")
-        rating = float(input("Enter rating (1-5): "))
-        stars = "*" * int(rating)
-
-        # Write review to reviewed.txt
-        save_review(order_id, review_text, rating, stars)
-
-        # Update order status to "Reviewed" in the original file
-        update_review_status(file_path, order_id)
-        print("Thank you for your review!")
-        print("Thank you for your review!")
-    else:
-        print("Order not found or has already been reviewed.")
-
-def view_reviewed(file_path):
     try:
-        with open(file_path, 'r') as file:
-            print(file.read())
-    except FileNotFoundError:
-        print("Error: The file was not found!")
+        choice = int(input("Enter the order number to mark as completed or 0 to cancel: "))
+    except ValueError:
+        print("Invalid input.")
+        return
+
+    if choice == 0:
+        return
+    elif 1 <= choice <= len(user_orders):
+        order_to_receive = user_orders[choice - 1]
+        # Change status to Completed
+        order_to_receive[13] = 'Completed'
+        completed_order_data = ','.join(order_to_receive) + '\n'
+        header = "OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,RecipientName,RecipientPhone,Shipment_size,Vehicle_choice,PaymentOption,Status,PurchaseDate,UserID\n"
+        write_lines_to_file(COMPLETED_ORDER_FILE, [completed_order_data], header)
+
+        # Add order to tobereview file
+        to_be_reviewed_data = ','.join(order_to_receive) + '\n'
+        write_lines_to_file(TO_BE_REVIEWED_FILE, [to_be_reviewed_data], header)
+
+        # Update ongoing orders
+        updated_orders = [
+            order for order in ongoing_orders if order.strip().split(',')[0] != order_to_receive[0]
+        ]
+        with open(ONGOING_ORDER_FILE, 'w') as file:
+            file.writelines(updated_orders)
+
+        print("Order marked as completed and added to reviews queue.")
+    else:
+        print("Invalid choice. Please try again.")
+
+
+def update_order_in_file(file_path, order_id, updated_order):
+    # Read all lines from the file
+    lines = read_lines_from_file(file_path)
+    if not lines:
+        return
+
+    # Replace the line corresponding to the order_id
+    updated_lines = []
+    for line in lines:
+        order = line.strip().split(',')
+        if order[0] == order_id:  # Match based on order ID
+            updated_lines.append(updated_order)  # Replace with updated order
+        else:
+            updated_lines.append(line)  # Keep other orders unchanged
+
+    # Rewrite the file with the updated lines
+    with open(file_path, 'w') as file:
+        file.writelines(updated_lines)
+
+
+def reorder_order(userID):
+    completed_orders = read_lines_from_file(COMPLETED_ORDER_FILE)
+    if not completed_orders or len(completed_orders) <=1:
+        print("No completed orders to reorder.")
+        return
+
+    user_completed_orders = [order.strip().split(',') for order in completed_orders[1:] if order.strip().split(',')[-1] == userID]
+    if not user_completed_orders:
+        print("No completed orders to reorder.")
+        return
+
+    print("\nCompleted Orders:")
+    for i, order in enumerate(user_completed_orders, start=1):
+        print(f"{i}. Order ID: {order[0]}, Item: {order[1]}, Quantity: {order[2]}")
+
+    try:
+        choice = int(input("Enter the order number to reorder or 0 to cancel: "))
+    except ValueError:
+        print("Invalid input.")
+        return
+
+    if choice == 0:
+        return
+    elif 1 <= choice <= len(user_completed_orders):
+        order_to_reorder = user_completed_orders[choice -1]
+        # Proceed with the reorder by creating a new order with same item and quantity
+        item_name = order_to_reorder[1]
+        quantity = int(order_to_reorder[2])
+        print("Proceeding to reorder...")
+        # Collect remaining details for the new order
+        ship_from = input("Shipping From Address: ").strip()
+        ship_to = input("Shipping To Address: ").strip()
+        sender_name = input("Sender Name: ").strip()
+        sender_phone = input("Sender Phone: ").strip()
+        recipient_name = input("Recipient Name: ").strip()
+        recipient_phone = input("Recipient Phone: ").strip()
+        purchase_date = input("Enter Purchase Date (YYYY-MM-DD): ").strip()
+
+        # Let user select shipment size
+        print("Choose Shipment Size:")
+        print("1. Small (Fits in a car trunk)")
+        print("2. Medium (Fits in a van)")
+        print("3. Large (Requires a truck)")
+        shipment_size_choice = input("Enter your choice (1-3): ").strip()
+        shipment_size = ""
+        if shipment_size_choice == "1":
+            shipment_size = "Small"
+        elif shipment_size_choice == "2":
+            shipment_size = "Medium"
+        elif shipment_size_choice == "3":
+            shipment_size = "Large"
+        else:
+            print("Invalid choice for shipment size.")
+            return
+
+        # Let user select vehicle type
+        print("Choose Vehicle Type:")
+        print("1. Specialized Carrier")
+        print("2. Van")
+        print("3. Truck")
+        vehicle_choice_input = input("Enter your choice (1-3): ").strip()
+        vehicle_choice = ""
+        if vehicle_choice_input == "1":
+            vehicle_choice = "Specialized Carrier"
+        elif vehicle_choice_input == "2":
+            vehicle_choice = "Van"
+        elif vehicle_choice_input == "3":
+            vehicle_choice = "Truck"
+        else:
+            print("Invalid choice for vehicle type.")
+            return
+
+        # Select payment option
+        print("Choose Payment Method:")
+        print("1. Credit/Debit Card")
+        print("2. UPI")
+        print("3. Mobile Wallet")
+        print("4. Cash On Delivery")
+        payment_choice = input("Enter your choice (1-4): ").strip()
+        payment_option = ""
+        if payment_choice == "1":
+            payment_option = "Credit/Debit Card"
+        elif payment_choice == "2":
+            payment_option = "UPI"
+        elif payment_choice == "3":
+            payment_option = "Mobile Wallet"
+        elif payment_choice == "4":
+            payment_option = "Cash On Delivery"
+        else:
+            print("Invalid choice for payment method.")
+            return
+
+        # Generate order ID
+        order_id = generate_order_id()
+        print("Order successfully placed! Your Order ID:", order_id)
+
+        # Save to ongoing orders
+        order_data = f"{order_id},{item_name},{quantity},{ship_to},{ship_from},{sender_name},{sender_phone},{recipient_name},{recipient_phone},{shipment_size},{vehicle_choice},{payment_option},Ongoing,{purchase_date},{userID}\n"
+        header = "OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,RecipientName,RecipientPhone,Shipment_size,Vehicle_choice,PaymentOption,Status,PurchaseDate,UserID\n"
+        write_lines_to_file(ONGOING_ORDER_FILE, [order_data], header)
+        print("Order successfully reordered!")
+
+    else:
+        print("Invalid choice.")
+
+def view_orders(userID):
+    for file_name, status in [(ONGOING_ORDER_FILE, 'Ongoing'), (CANCELLED_ORDER_FILE, 'Cancelled'), (COMPLETED_ORDER_FILE, 'Completed')]:
+        print(f"\n{status} Orders for User {userID}:")
+        orders = read_lines_from_file(file_name)
+        if not orders or len(orders) <= 1:
+            print(f"No {status.lower()} orders.")
+            continue
+        
+        # Add header to the order details
+        if status == 'Ongoing':
+            header = "OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,RecipientName,RecipientPhone,Shipment_size,Vehicle_choice,PaymentOption,Status,PurchaseDate,UserID\n"
+        elif status == 'Cancelled':
+            header = "OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,RecipientName,RecipientPhone,Shipment_size,Vehicle_choice,PaymentOption,Status,PurchaseDate,UserID\n"
+        elif status == 'Completed':
+            header = "OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,RecipientName,RecipientPhone,Shipment_size,Vehicle_choice,PaymentOption,Status,PurchaseDate,UserID\n"
+        
+        print(header.strip())  # Print header
+
+        for order in orders[1:]:  # Skip header in the file
+            order_details = order.strip().split(',')
+            if order_details[-1] == userID:
+                print(order)
+
+
+def remove_order_from_file(file_path, order_id):
+    orders = read_lines_from_file(file_path)
+    if not orders:
+        return
+    with open(file_path, 'w') as file:
+        for order in orders:
+            try:
+                current_order_id = order.strip().split(',')[0]
+                if current_order_id != order_id:
+                    file.write(order)
+            except IndexError:
+                continue  # Skip invalid lines
+
+def ratings_and_reviews(userID):
+    while True:
+        print("\nRatings and Reviews - Select an option:")
+        print("1. Leave a Review")
+        print("2. View Reviews")
+        print("3. Back to Main Menu")
+
+        try:
+            choice = int(input("Enter choice: "))
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+            continue
+
+        if choice == 1:
+            leave_review(userID)
+        elif choice == 2:
+            view_reviews(userID)
+        elif choice == 3:
+            break
+        else:
+            print("Invalid choice. Please try again.")
+
+def leave_review(userID):
+    to_be_reviewed = read_lines_from_file(TO_BE_REVIEWED_FILE)
+    if not to_be_reviewed or len(to_be_reviewed) <= 1:
+        print("No orders available for review.")
+        return
+
+    user_orders = [
+        order.strip().split(',')
+        for order in to_be_reviewed[1:]
+        if order.strip().split(',')[-1] == userID
+    ]
+    if not user_orders:
+        print("No orders available for review.")
+        return
+
+    print("\nOrders to Review:")
+    for i, order in enumerate(user_orders, start=1):
+        print(f"{i}. Order ID: {order[0]}, Item: {order[1]}, Status: {order[12]}")
+
+    try:
+        choice = int(input("Select an order to review (0 to cancel): "))
+    except ValueError:
+        print("Invalid input.")
+        return
+
+    if choice == 0:
+        return
+    elif 1 <= choice <= len(user_orders):
+        order_to_review = user_orders[choice - 1]
+        review = input("Enter your review: ").strip()
+        rating = input("Enter your rating (1-5): ").strip()
+
+        # Save review to reviewed file
+        review_data = f"{order_to_review[0]},{order_to_review[1]},{review},{rating},{userID}\n"
+        header = "OrderID,ItemName,Review,Rating,UserID\n"
+        write_lines_to_file(REVIEWED_FILE, [review_data], header)
+
+        # Remove order from tobereview file
+        updated_orders = [
+            order for order in to_be_reviewed if order.strip().split(',')[0] != order_to_review[0]
+        ]
+        with open(TO_BE_REVIEWED_FILE, 'w') as file:
+            file.writelines(updated_orders)
+
+        print("Review submitted successfully!")
+    else:
+        print("Invalid choice. Please try again.")
+
+def view_reviews(userID):
+    reviewed = read_lines_from_file(REVIEWED_FILE)
+    if not reviewed or len(reviewed) <= 1:
+        print("No reviews found.")
+        return
+
+    user_reviews = [
+        review.strip().split(',')
+        for review in reviewed[1:]
+        if review.strip().split(',')[-1] == userID
+    ]
+    if not user_reviews:
+        print("You have not submitted any reviews.")
+        return
+
+    print("\nYour Reviews:")
+    for review in user_reviews:
+        print(f"Order ID: {review[0]}, Item: {review[1]}, Review: {review[2]}, Rating: {review[3]}")
 
 
 main()
