@@ -1,5 +1,5 @@
-from user import read_lines_from_file
-from user import write_lines_to_file
+from user import read_lines_from_file # filepath
+from user import write_lines_to_file # file_path, lines, header=None
 
 def admin_dashboard():
     print('1. Overview of Shipments')
@@ -45,9 +45,7 @@ def driver_management():
     print('3. Ongoing Assignment')
 
 def generate_reports():
-    print('1. Inventory Turnover Ratio')
-    print('2. Truck Turnaround Time')
-    print('3. Average Transportation Cost')
+    read_lines_from_file('user.txt')
 
     generate_trip_log_reports()
 
