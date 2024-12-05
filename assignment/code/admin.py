@@ -1,15 +1,31 @@
+from user import read_lines_from_file
+from user import write_lines_to_file
+
 def admin_dashboard():
     print('1. Overview of Shipments')
     print('2. Pending Shipments')
     print('3. Completed Shipments')
-    print('4. Ongoing Deliveries')
-    print('5. Driver Information')
-    print('6. Fleet Management')
-    print('7. Order Processing Status')
-    print('8. Fuel & Vehicle Consumption Stats')
-    print('9. Reports')
+    print('4. Driver Information')
+    print('5. Fleet Management')
+    print('6. Fuel & Vehicle Consumption Stats')
+    print('7. Reports')
 
     choice = int(input('Enter your choice: '))
+
+    options = {
+        1 : read_lines_from_file('order_ids.txt'),
+        2 : read_lines_from_file('ongoingorder.txt'),
+        3 : read_lines_from_file('completedorder.txt'),
+        4 : read_lines_from_file('driver.txt'),
+        5 : read_lines_from_file('vehicle.txt'),
+        6 : read_lines_from_file('fuel.txt'),
+        7 : read_lines_from_file('user.txt'),
+    }
+
+    if choice in options:
+        print(options[choice])
+    else:
+        print('Invalid choice')
 
 def vehicle_management_and_maintenance():
     print('1. Vehicle Status')
@@ -45,3 +61,4 @@ def execute_admin_features():
     driver_management()
     generate_reports()
 
+admin_dashboard()
