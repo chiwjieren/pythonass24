@@ -1,101 +1,11 @@
-Vehicle_ID,Maintenance_Status,Performance_Metrics,Fuel_Level (%),Driver_ID,Current_Location,Turnaround_Time (hrs)
-V001,Good,Optimal,75,1,Johor,12.0
-V002,Needs Maintenance,Below Optimal,50,2,Kuala Lumpur,18.0
-V003,Good,Optimal,60,3,Kedah,
-V004,Good,Optimal,70,4,Butterworth,10.0
-V005,Needs Maintenance,Below Optimal,45,5,Kelantan,17.0
-V006,Good,Optimal,80,6,Terengganu,14.0
-V007,Good,Optimal,65,7,Kuala Lumpur,
-V008,Good,Optimal,85,8,Johor,13.0
-V009,Needs Maintenance,Below Optimal,40,9,Butterworth,16.0
-V010,Good,Optimal,90,10,Kedah,
-V011,Good,Optimal,75,1,Johor,12.0
-V012,Needs Maintenance,Below Optimal,50,2,Kuala Lumpur,18.0
-V013,Good,Optimal,60,3,Kedah,
-V014,Good,Optimal,70,4,Butterworth,10.0
-V015,Needs Maintenance,Below Optimal,45,5,Kelantan,17.0
-V016,Good,Optimal,80,6,Terengganu,14.0
-V017,Good,Optimal,65,7,Kuala Lumpur,
-V018,Good,Optimal,85,8,Johor,13.0
-V019,Needs Maintenance,Below Optimal,40,9,Butterworth,16.0
-V020,Good,Optimal,90,10,Kedah,
-V021,Good,Optimal,75,1,Johor,12.0
-V022,Needs Maintenance,Below Optimal,50,2,Kuala Lumpur,18.0
-V023,Good,Optimal,60,3,Kedah,
-V024,Good,Optimal,70,4,Butterworth,10.0
-V025,Needs Maintenance,Below Optimal,45,5,Kelantan,17.0
-V026,Good,Optimal,80,6,Terengganu,14.0
-V027,Good,Optimal,65,7,Kuala Lumpur,
-V028,Good,Optimal,85,8,Johor,13.0
-V029,Needs Maintenance,Below Optimal,40,9,Butterworth,16.0
-V030,Good,Optimal,90,10,Kedah,
-V031,Good,Optimal,75,1,Johor,12.0
-V032,Needs Maintenance,Below Optimal,50,2,Kuala Lumpur,18.0
-V033,Good,Optimal,60,3,Kedah,
-V034,Good,Optimal,70,4,Butterworth,10.0
-V035,Needs Maintenance,Below Optimal,45,5,Kelantan,17.0
-V036,Good,Optimal,80,6,Terengganu,14.0
-V037,Good,Optimal,65,7,Kuala Lumpur,
-V038,Good,Optimal,85,8,Johor,13.0
-V039,Needs Maintenance,Below Optimal,40,9,Butterworth,16.0
-V040,Good,Optimal,90,10,Kedah,
-V041,Good,Optimal,75,1,Johor,12.0
-V042,Needs Maintenance,Below Optimal,50,2,Kuala Lumpur,18.0
-V043,Good,Optimal,60,3,Kedah,
-V044,Good,Optimal,70,4,Butterworth,10.0
-V045,Needs Maintenance,Below Optimal,45,5,Kelantan,17.0
-V046,Good,Optimal,80,6,Terengganu,14.0
-V047,Good,Optimal,65,7,Kuala Lumpur,
-V048,Good,Optimal,85,8,Johor,13.0
-V049,Needs Maintenance,Below Optimal,40,9,Butterworth,16.0
-V050,Good,Optimal,90,10,Kedah,
-V051,Good,Optimal,75,1,Johor,12.0
-V052,Needs Maintenance,Below Optimal,50,2,Kuala Lumpur,18.0
-V053,Good,Optimal,60,3,Kedah,
-V054,Good,Optimal,70,4,Butterworth,10.0
-V055,Needs Maintenance,Below Optimal,45,5,Kelantan,17.0
-V056,Good,Optimal,80,6,Terengganu,14.0
-V057,Good,Optimal,65,7,Kuala Lumpur,
-V058,Good,Optimal,85,8,Johor,13.0
-V059,Needs Maintenance,Below Optimal,40,9,Butterworth,16.0
-V060,Good,Optimal,90,10,Kedah,
-V061,Good,Optimal,75,1,Johor,12.0
-V062,Needs Maintenance,Below Optimal,50,2,Kuala Lumpur,18.0
-V063,Good,Optimal,60,3,Kedah,
-V064,Good,Optimal,70,4,Butterworth,10.0
-V065,Needs Maintenance,Below Optimal,45,5,Kelantan,17.0
-V066,Good,Optimal,80,6,Terengganu,14.0
-V067,Good,Optimal,65,7,Kuala Lumpur,
-V068,Good,Optimal,85,8,Johor,13.0
-V069,Needs Maintenance,Below Optimal,40,9,Butterworth,16.0
-V070,Good,Optimal,90,10,Kedah,
-V071,Good,Optimal,75,1,Johor,12.0
-V072,Needs Maintenance,Below Optimal,50,2,Kuala Lumpur,18.0
-V073,Good,Optimal,60,3,Kedah,
-V074,Good,Optimal,70,4,Butterworth,10.0
-V075,Needs Maintenance,Below Optimal,45,5,Kelantan,17.0
-V076,Good,Optimal,80,6,Terengganu,14.0
-V077,Good,Optimal,65,7,Kuala Lumpur,
-V078,Good,Optimal,85,8,Johor,13.0
-V079,Needs Maintenance,Below Optimal,40,9,Butterworth,16.0
-V080,Good,Optimal,90,10,Kedah,
-V081,Good,Optimal,75,1,Johor,12.0
-V082,Needs Maintenance,Below Optimal,50,2,Kuala Lumpur,18.0
-V083,Good,Optimal,60,3,Kedah,
-V084,Good,Optimal,70,4,Butterworth,10.0
-V085,Needs Maintenance,Below Optimal,45,5,Kelantan,17.0
-V086,Good,Optimal,80,6,Terengganu,14.0
-V087,Good,Optimal,65,7,Kuala Lumpur,
-V088,Good,Optimal,85,8,Johor,13.0
-V089,Needs Maintenance,Below Optimal,40,9,Butterworth,16.0
-V090,Good,Optimal,90,10,Kedah,
-V091,Good,Optimal,75,1,Johor,12.0
-V092,Needs Maintenance,Below Optimal,50,2,Kuala Lumpur,18.0
-V093,Good,Optimal,60,3,Kedah,
-V094,Good,Optimal,70,4,Butterworth,10.0
-V095,Needs Maintenance,Below Optimal,45,5,Kelantan,17.0
-V096,Good,Optimal,80,6,Terengganu,14.0
-V097,Good,Optimal,65,7,Kuala Lumpur,
-V098,Good,Optimal,85,8,Johor,13.0
-V099,Needs Maintenance,Below Optimal,40,9,Butterworth,16.0
-V100,Good,Optimal,90,10,Kedah,
+Vehicle_ID,Maintenance_Status,Performance_Metrics,Fuel_Level (%),Driver_ID,Current_Location
+V001,Good,Optimal,75,1,Johor
+V002,Needs Maintenance,Below Optimal,50,2,Kuala Lumpur
+V003,Good,Optimal,60,3,Kedah
+V004,Good,Optimal,70,4,Butterworth
+V005,Needs Maintenance,Below Optimal,45,5,Kelantan
+V006,Good,Optimal,80,6,Terengganu
+V007,Good,Optimal,65,7,Kuala Lumpur
+V008,Good,Optimal,85,8,Johor
+V009,Needs Maintenance,Below Optimal,40,9,Butterworth
+V010,Good,Optimal,90,10,Kedah

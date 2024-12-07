@@ -1,72 +1,123 @@
+FUNCTION read_lines_from_file(file_path):
+    TRY:
+        OPEN file_path in read mode
+        RETURN file contents as lines
+    EXCEPT FileNotFoundError:
+        RETURN empty list
+    ENDIF
+
 FUNCTION AdminDashboard:
-    DISPLAY "Overview of Shipments"
-    DISPLAY "Pending Shipments"
-    DISPLAY "Completed Shipments"
-    DISPLAY "Ongoing Deliveries"
-    DISPLAY "Driver Information"
-    DISPLAY "Fleet Management"
-    DISPLAY "Order Processing Status"
-    DISPLAY "Fuel & Vehicle Consumption Stats"
-    DISPLAY "Reports"
+    DISPLAY "1. Overview of Shipments"
+    DISPLAY "2. Pending Shipments"
+    DISPLAY "3. Completed Shipments"
+    DISPLAY "4. Driver Information"
+    DISPLAY "5. Fuel & Consumption"
+    DISPLAY "6. Fleet Management"
+    DISPLAY "7. Reports"
+    DISPLAY "8. Exit"
+
+    function_mapping = {
+        1: overview_of_shipments
+        2: pending_shipments
+        3: completed_shipments
+        4: driver_management
+        5: manage_fuel_and_vehicle_consumption
+        6: vehicle_management_and_maintenance
+        7: generate_reports
+        8: exit
+    }
+
+    TRY:
+        GET choice from user input
+        CALL function_mapping[choice]()
+    EXCEPT ValueError:
+        DISPLAY "Please enter a valid number"
+    ENDIF
 
 FUNCTION VehicleManagementAndMaintenance:
-    FOR each vehicle IN fleet:
-        vehicleStatus = CHECK vehicle.status
-        vehicleMaintenanceHistory = GET vehicle.maintenanceHistory
-        maintenanceAlert = CHECK vehicle.maintenanceDueDate
-        IF maintenanceAlert is TRUE:
-            NOTIFY Admins "Maintenance Due for Vehicle ID: " + vehicle.id
-        ENDIF
-        SCHEDULE maintenance AS NEEDED
-        DISPLAY vehicleStatus, vehicleMaintenanceHistory, maintenanceAlert
-    ENDFOR
+    DISPLAY "1. View Vehicle Status"
+    DISPLAY "2. View Maintenance Alerts"
+    DISPLAY "3. Back to Main Menu"
+
+    GET choice from user
+    IF choice is 1:
+        READ vehicle data from file
+        DISPLAY vehicle status table
+    ELSE IF choice is 2:
+        READ vehicle data from file
+        FOR each vehicle:
+            IF needs maintenance OR low fuel:
+                DISPLAY alert
+            ENDIF
+        ENDFOR
+    ELSE IF choice is 3:
+        RETURN to main menu
+    ENDIF
 
 FUNCTION ManageFuelAndVehicleConsumption:
-    FOR each vehicle IN fleet:
-        fuelLevel = CHECK vehicle.fuelLevel
-        fuelConsumptionPattern = TRACK vehicle.fuelConsumption
-        utilizationRate = CALCULATE vehicle.utilizationRate
-        DISPLAY fuelLevel, fuelConsumptionPattern, utilizationRate
-        IF fuelLevel < THRESHOLD:
-            NOTIFY Admins "Low Fuel Alert for Vehicle ID: " + vehicle.id
-        ENDIF
-    ENDFOR
+    DISPLAY "1. View Fuel Levels"
+    DISPLAY "2. Track Consumption Patterns"
+    DISPLAY "3. Vehicle Utilization Report"
+    DISPLAY "4. Back to Main Menu"
+
+    GET choice from user
+    IF choice is 1:
+        DISPLAY fuel levels table
+    ELSE IF choice is 2:
+        DISPLAY consumption analysis
+    ELSE IF choice is 3:
+        DISPLAY utilization report
+    ELSE IF choice is 4:
+        RETURN to main menu
+    ENDIF
 
 FUNCTION DriverManagement:
-    FOR each driver IN drivers:
-        driverStatus = CHECK driver.status 
-        currentLocation = GET driver.currentLocation
-        ongoingAssignment = GET driver.currentAssignment
-        DISPLAY driverStatus, currentLocation, ongoingAssignment
-    ENDFOR
-    RETURN driverStatus, currentLocation, ongoingAssignment
+    DISPLAY "1. View All Drivers"
+    DISPLAY "2. View Active Deliveries"
+    DISPLAY "3. View Driver Locations"
+    DISPLAY "4. View Driver Health Reports"
+    DISPLAY "5. Back to Main Menu"
+
+    GET choice from user
+    IF choice is 1:
+        DISPLAY all drivers table
+    ELSE IF choice is 2:
+        DISPLAY active deliveries
+    ELSE IF choice is 3:
+        DISPLAY driver locations
+    ELSE IF choice is 4:
+        DISPLAY health reports
+    ELSE IF choice is 5:
+        RETURN to main menu
+    ENDIF
 
 FUNCTION GenerateReports:
-    inventoryTurnoverRatio = CALCULATE InventoryTurnoverRatio()
-    truckTurnaroundTime = CALCULATE TruckTurnaroundTime()
-    avgTransportCost = CALCULATE AvgTransportationCost()
-    operatingRatio = CALCULATE OperatingRatio()
-    DISPLAY "Inventory Turnover Ratio:", inventoryTurnoverRatio
-    DISPLAY "Truck Turnaround Time:", truckTurnaroundTime
-    DISPLAY "Average Transportation Cost:", avgTransportCost
-    DISPLAY "Operating Ratio:", operatingRatio
+    DISPLAY "1. Performance Metrics"
+    DISPLAY "2. Trip Log Reports"
+    DISPLAY "3. Back to Main Menu"
 
-    FUNCTION GenerateTripLogReports:
-        FOR each trip IN trips:
-            routeDetails = GET trip.routeDetails
-            timestamps = GET trip.timestamps
-            DISPLAY "Trip ID: " + trip.id
-            DISPLAY "Route Details: " + routeDetails
-            DISPLAY "Timestamps: " + timestamps
-        ENDFOR
-        RETURN tripLogReports
+    GET choice from user
+    IF choice is 1:
+        DISPLAY fleet metrics
+        DISPLAY delivery metrics
+    ELSE IF choice is 2:
+        CALL generate_trip_log_reports()
+    ELSE IF choice is 3:
+        RETURN to main menu
+    ENDIF
+
+FUNCTION GenerateTripLogReports:
+    READ drivers and vehicles data
+    FOR each driver:
+        DISPLAY driver details
+        DISPLAY route information
+        DISPLAY delivery status
+    ENDFOR
+    DISPLAY summary statistics
 
 FUNCTION ExecuteAdminFeatures:
     CALL AdminDashboard()
-    CALL VehicleManagementAndMaintenance()
-    CALL ManageFuelAndVehicleConsumption()
-    CALL DriverManagement()
-    CALL GenerateReports()
-    CALL GenerateTripLogReports()
 
-ExecuteAdminFeatures()
+IF this is main program:
+    CALL ExecuteAdminFeatures()
+ENDIF

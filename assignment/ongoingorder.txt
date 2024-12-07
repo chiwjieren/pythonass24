@@ -1,6 +1,11 @@
-OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,RecipientName,RecipientPhone,Vehicle,PaymentOption,Status,PurchaseDate
-2371,1,1,1,1,1,1,1,1,Van,2,Ongoing,3
-1987,1,1,1,1,1,1,1,1,Van,1,Ongoing,1
-4069,1,1,1,1,1,1,1,1,Van,2,Ongoing,6
-4342,1,1,1,1,1,1,1,1,Van,4,Ongoing,9
-3643,1,1,1,1,1,1,1,1,Van,1,Ongoing,1
+OrderID,Quantity,ShipTo,ShipFrom,Vehicle
+2371,5,Kuala Lumpur,Penang,Van
+1987,3,Johor,Melaka,Truck
+4069,2,Ipoh,Selangor,Van
+4342,1,Kedah,Perlis,Lorry
+3643,4,Selangor,Perak,Van
+2156,6,Penang,Johor,Truck
+3891,2,Melaka,Kuala Lumpur,Van
+4521,3,Perak,Kedah,Lorry
+1765,5,Perlis,Ipoh,Van
+2983,4,Selangor,Penang,Truck
