@@ -1,0 +1,11 @@
+Driver_ID,Name,Route,Consignment_ID,Weight (kg),Status,Health_Report
+1,Jack Harris,Route 1,C001,500,Delivered,Healthy
+2,Olivia Wright,Route 2,C002,1000,In Progress,Healthy
+3,Liam Young,Route 1,C003,750,Pending,Healthy
+4,Emma Davis,Route 1,C004,300,Delivered,Healthy
+5,Ethan Clark,Route 2,C005,800,In Progress,Healthy
+6,Mia Brown,Route 2,C006,450,Delivered,Healthy
+7,Lucas Wilson,Route 1,C007,600,Pending,Healthy
+8,Amelia Taylor,Route 1,C008,700,Delivered,Healthy
+9,Noah Jones,Route 2,C009,550,In Progress,Healthy
+10,Sophia Lee,Route 1,C010,400,Pending,Healthy
