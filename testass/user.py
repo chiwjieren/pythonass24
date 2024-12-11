@@ -461,7 +461,7 @@ def order_received(userID):
     elif 1 <= choice <= len(user_orders):
         order_to_receive = user_orders[choice - 1]
         # Change status to Completed
-        order_to_receive[13] = 'Completed'
+        order_to_receive[12] = 'Completed'
         completed_order_data = ','.join(order_to_receive) + '\n'
         header = "OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,RecipientName,RecipientPhone,Shipment_size,Vehicle_choice,PaymentOption,Status,PurchaseDate,UserID\n"
         write_lines_to_file(COMPLETED_ORDER_FILE, [completed_order_data], header)
@@ -532,37 +532,55 @@ def reorder_order(userID):
         quantity = int(order_to_reorder[2])
         print("Proceeding to reorder...")
         # Collect remaining details for the new order
-        ship_from = input("Shipping From Address: ").strip()
-        ship_to = input("Shipping To Address: ").strip()
+        locations = [
+            "Johor", "Kuala Lumpur", "Butterworth", "Kedah", "Perlis", 
+            "Terengganu", "Kelantan"
+        ]
+
+        print_location_menu(locations)
+        try:
+            ship_from_choice = int(input("\nEnter shipping from location (1-7): "))
+            if ship_from_choice < 1 or ship_from_choice > len(locations):
+                print_error("Invalid choice. Please select a valid location.")
+                return
+            ship_from = locations[ship_from_choice - 1]
+        except ValueError:
+            print_error("Invalid input. Please enter a number.")
+            return
+        
+        print_location_menu(locations)
+        try:
+            ship_to_choice = int(input("\nEnter shipping to location (1-7): "))
+            if ship_to_choice < 1 or ship_to_choice > len(locations):
+                print_error("Invalid choice. Please select a valid location.")
+                return
+            ship_to = locations[ship_to_choice - 1]
+        except ValueError:
+            print_error("Invalid input. Please enter a number.")
+            return
+
+        print_divider()
         sender_name = input("Sender Name: ").strip()
         sender_phone = input("Sender Phone: ").strip()
         recipient_name = input("Recipient Name: ").strip()
         recipient_phone = input("Recipient Phone: ").strip()
         purchase_date = input("Enter Purchase Date (YYYY-MM-DD): ").strip()
 
-        # Let user select shipment size
-        print("Choose Shipment Size:")
-        print("1. Small (Fits in a car trunk)")
-        print("2. Medium (Fits in a van)")
-        print("3. Large (Requires a truck)")
-        shipment_size_choice = input("Enter your choice (1-3): ").strip()
+        print_shipment_menu()
+        shipment_size_choice = input("\nEnter your choice (1-3): ").strip()
         shipment_size = ""
         if shipment_size_choice == "1":
-            shipment_size = "Small"
+            shipment_size = "BulkOrder"
         elif shipment_size_choice == "2":
-            shipment_size = "Medium"
+            shipment_size = "SmallParcel"
         elif shipment_size_choice == "3":
-            shipment_size = "Large"
+            shipment_size = "SpecialCargo"
         else:
-            print("Invalid choice for shipment size.")
+            print_error("Invalid choice for shipment size.")
             return
 
-        # Let user select vehicle type
-        print("Choose Vehicle Type:")
-        print("1. Specialized Carrier")
-        print("2. Van")
-        print("3. Truck")
-        vehicle_choice_input = input("Enter your choice (1-3): ").strip()
+        print_vehicle_menu()
+        vehicle_choice_input = input("\nEnter your choice (1-3): ").strip()
         vehicle_choice = ""
         if vehicle_choice_input == "1":
             vehicle_choice = "Specialized Carrier"
@@ -571,16 +589,11 @@ def reorder_order(userID):
         elif vehicle_choice_input == "3":
             vehicle_choice = "Truck"
         else:
-            print("Invalid choice for vehicle type.")
+            print_error("Invalid choice for vehicle type.")
             return
 
-        # Select payment option
-        print("Choose Payment Method:")
-        print("1. Credit/Debit Card")
-        print("2. UPI")
-        print("3. Mobile Wallet")
-        print("4. Cash On Delivery")
-        payment_choice = input("Enter your choice (1-4): ").strip()
+        print_payment_menu()
+        payment_choice = input("\nEnter your choice (1-4): ").strip()
         payment_option = ""
         if payment_choice == "1":
             payment_option = "Credit/Debit Card"
@@ -591,18 +604,18 @@ def reorder_order(userID):
         elif payment_choice == "4":
             payment_option = "Cash On Delivery"
         else:
-            print("Invalid choice for payment method.")
+            print_error("Invalid choice for payment method.")
             return
 
         # Generate order ID
         order_id = generate_order_id()
-        print("Order successfully placed! Your Order ID:", order_id)
+        print_success(f"Order successfully placed! Your Order ID: {order_id}")
 
         # Save to ongoing orders
-        order_data = f"{order_id},{item_name},{quantity},{ship_to},{ship_from},{sender_name},{sender_phone},{recipient_name},{recipient_phone},{shipment_size},{vehicle_choice},{payment_option},Ongoing,{purchase_date},{userID}\n"
+        order_data = f"{order_id},{item_name},{quantity},{ship_to},{ship_from},{sender_name},{sender_phone},{recipient_name},{recipient_phone},{shipment_size},{vehicle_choice},{payment_option},Pending,{purchase_date},{userID}\n"
         header = "OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,RecipientName,RecipientPhone,Shipment_size,Vehicle_choice,PaymentOption,Status,PurchaseDate,UserID\n"
         write_lines_to_file(ONGOING_ORDER_FILE, [order_data], header)
-        print("Order successfully reordered!")
+        print_success("Order successfully reordered!")
 
     else:
         print("Invalid choice.")
