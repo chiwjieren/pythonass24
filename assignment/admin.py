@@ -171,7 +171,7 @@ def manage_fuel_and_vehicle_consumption():
             if vehicles:
                 print("\n=== Consumption Analysis ===")
                 low_fuel = sum(1 for v in vehicles[1:] if int(v.strip().split(',')[3].strip('%')) < 50)
-                total = len(vehicles) - 1  # Exclude header
+                total = len(vehicles) - 1 
                 print(f"Total Vehicles: {total}")
                 print(f"Vehicles with Low Fuel: {low_fuel}")
                 print(f"Fuel Efficiency Rate: {((total-low_fuel)/total)*100:.1f}%")
@@ -331,7 +331,6 @@ def generate_trip_log_reports():
         print("\nDetailed Trip Logs:")
         print("-" * 80)
         
-        # Create vehicle lookup for locations
         vehicle_locations = {v.split(',')[4]: v.split(',')[5] 
                            for v in vehicles[1:]}
         
