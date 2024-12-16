@@ -10,20 +10,6 @@ REVIEWS_FILE = "reviews.txt"
 TO_BE_REVIEWED_FILE = "tobereview.txt"
 REVIEWED_FILE = "reviewed.txt"
 
-# Pricing constants
-BASE_PRICE = 50
-PRICE_PER_UNIT = 10
-VEHICLE_PRICES = {
-    "Specialized Carrier": 100,
-    "Van": 150,
-    "Truck": 200
-}
-SHIPMENT_SIZE_PRICES = {
-    "BulkOrder": 50,
-    "SmallParcel": 100,
-    "SpecialCargo": 150
-}
-
 # Add these constants at the top with other constants
 STOPOVER_TIME = 30  # minutes
 SAFETY_CHECK_TIME = 30  # minutes
@@ -97,12 +83,52 @@ def print_order_details(order):
     print(f"│ Status: {order[12]:<{width-11}}│")
     print("└" + "─" * (width-2) + "┘")
 
+class PricingCalculator:
+    def __init__(self):
+        # Base pricing configuration
+        self.base_price = 50
+        self.price_per_unit = 10
+        
+        # Vehicle type pricing
+        self.vehicle_prices = {
+            "Specialized Carrier": 100,
+            "Van": 150,
+            "Truck": 200
+        }
+        
+        # Shipment size pricing
+        self.shipment_size_prices = {
+            "BulkOrder": 50,
+            "SmallParcel": 100,
+            "SpecialCargo": 150
+        }
+    
+    def calculate_vehicle_price(self, vehicle_type):
+        """Calculate price based on vehicle type"""
+        return self.vehicle_prices.get(vehicle_type, 0)
+    
+    def calculate_shipment_price(self, shipment_size):
+        """Calculate price based on shipment size"""
+        return self.shipment_size_prices.get(shipment_size, 0)
+    
+    def calculate_quantity_price(self, quantity):
+        """Calculate price based on quantity"""
+        return quantity * self.price_per_unit
+    
+    def calculate_total_price(self, quantity, vehicle_type, shipment_size):
+        """Calculate total price for an order"""
+        total = self.base_price
+        total += self.calculate_quantity_price(quantity)
+        total += self.calculate_vehicle_price(vehicle_type)
+        total += self.calculate_shipment_price(shipment_size)
+        return total
+
+# Create a global instance of the pricing calculator
+pricing_calculator = PricingCalculator()
+
 def calculate_order_price(quantity, vehicle_type, shipment_size):
-    total_price = BASE_PRICE
-    total_price += quantity * PRICE_PER_UNIT
-    total_price += VEHICLE_PRICES.get(vehicle_type, 0)
-    total_price += SHIPMENT_SIZE_PRICES.get(shipment_size, 0)
-    return total_price
+    """Calculate the total price for an order using the pricing calculator"""
+    return pricing_calculator.calculate_total_price(quantity, vehicle_type, shipment_size)
 
 # Main menu and system selection
 def main_menu():
@@ -558,9 +584,9 @@ def view_routes():
     print("   - Total distance: 780 km")
     
     print("\nTime Requirements:")
-    print(f"• Stopover time at each hub: {STOPOVER_TIME} minutes")
-    print(f"• Safety checks and refueling: {SAFETY_CHECK_TIME} minutes")
-    print(f"• Turnover time at destination: {TURNOVER_TIME} minutes")
+    print(f"- Stopover time at each hub: {STOPOVER_TIME} minutes")
+    print(f"- Safety checks and refueling: {SAFETY_CHECK_TIME} minutes")
+    print(f"- Turnover time at destination: {TURNOVER_TIME} minutes")
     
     print("\nEstimated Journey Times:")
     print("Route 1:")
@@ -699,7 +725,8 @@ def print_review_details(review):
     print(f"│ Item: {review[1]:<{width-9}}│")
     print("├" + "─" * (width-2) + "┤")
     print(f"│ Review: {review[2]:<{width-11}}│")
-    print(f"│ Rating: {'⭐' * int(review[3]):<{width-11}}│")
+    print(f"│ Rating: {int(review[3]) * '*':<{width-11}}│")
+    print(f"│ Date: {review[5]:<{width-9}}│")
     print("└" + "─" * (width-2) + "┘")
 
 # Customer functions
@@ -909,11 +936,11 @@ def view_orders(userID):
     completed = load_data(COMPLETED_ORDER_FILE)
     cancelled = load_data(CANCELLED_ORDER_FILE)
     
-    # Filter orders by user ID
+    # Filter orders by user ID (index 14 is UserID)
     user_orders = {
-        'Ongoing': [order for order in ongoing if order[-2] == userID and order[12] in ['Pending', 'Ongoing']],
-        'Completed': [order for order in completed if order[-2] == userID],
-        'Cancelled': [order for order in cancelled if order[-2] == userID]
+        'Ongoing': [order for order in ongoing if order[14] == userID and order[12] in ['Pending', 'Assigned', 'Ongoing', 'Delivered']],
+        'Completed': [order for order in completed if order[14] == userID],
+        'Cancelled': [order for order in cancelled if order[14] == userID]
     }
     
     if not any(user_orders.values()):
@@ -925,24 +952,24 @@ def view_orders(userID):
         if orders:
             print(f"\n{status} Orders:")
             for order in orders:
-                print("\n" + "─" * 50)
+                print("\n" + "-" * 50)
                 print(f"Order ID: {order[0]}")
                 print(f"Item: {order[1]} (Quantity: {order[2]})")
                 print(f"From: {order[4]} To: {order[3]}")
                 print(f"Status: {order[12]}")
                 # Show tracking status based on order status
                 if order[12] == 'Pending':
-                    print("Tracking: 📦 Order confirmed, waiting for pickup")
+                    print("Tracking: Order confirmed, waiting for pickup")
                 elif order[12] == 'Assigned':
-                    print("Tracking: 🔄 Driver assigned, preparing for pickup")
+                    print("Tracking: Driver assigned, preparing for pickup")
                 elif order[12] == 'Ongoing':
-                    print("Tracking: 🚚 In transit to destination")
+                    print("Tracking: In transit to destination")
                 elif order[12] == 'Delivered':
-                    print("Tracking: 📬 Package delivered")
+                    print("Tracking: Package delivered")
                 elif order[12] == 'Completed':
-                    print("Tracking: ✅ Order completed")
+                    print("Tracking: Order completed")
                 elif order[12] == 'Cancelled':
-                    print("Tracking: ❌ Order cancelled")
+                    print("Tracking: Order cancelled")
                 
                 print(f"Order Date: {order[13]}")
                 print(f"Price: RM{order[15]}")
@@ -1009,7 +1036,7 @@ def order_received(userID):
     ongoing_orders = load_data(ONGOING_ORDER_FILE)
     completable_orders = [
         order for order in ongoing_orders 
-        if order[-2] == userID and order[12] == 'Delivered'
+        if order[14] == userID and order[12] == 'Delivered'
     ]
     
     if not completable_orders:
@@ -1034,6 +1061,9 @@ def order_received(userID):
         
         if 1 <= choice <= len(completable_orders):
             order_to_complete = completable_orders[choice - 1]
+            
+            # Update status to Completed
+            order_to_complete[12] = 'Completed'
             
             # Move to completed orders
             completed_orders = load_data(COMPLETED_ORDER_FILE)
@@ -1184,13 +1214,12 @@ def leave_review(userID):
     # Get both completed and cancelled orders that can be reviewed
     to_be_reviewed = load_data(TO_BE_REVIEWED_FILE)
     completed_orders = load_data(COMPLETED_ORDER_FILE)
-    cancelled_orders = load_data(CANCELLED_ORDER_FILE)
     
     # Combine orders that can be reviewed
     reviewable_orders = []
     
     # Add orders from to_be_reviewed
-    reviewable_orders.extend([order for order in to_be_reviewed if order[-2] == userID])
+    reviewable_orders.extend([order for order in to_be_reviewed if order[14] == userID])
     
     # Add completed orders that haven't been reviewed yet
     reviews = load_data(REVIEWS_FILE)
@@ -1198,12 +1227,7 @@ def leave_review(userID):
     
     # Add completed orders that haven't been reviewed
     for order in completed_orders:
-        if order[-2] == userID and order[0] not in reviewed_order_ids:
-            reviewable_orders.append(order)
-    
-    # Add cancelled orders that haven't been reviewed
-    for order in cancelled_orders:
-        if order[-2] == userID and order[0] not in reviewed_order_ids:
+        if order[14] == userID and order[0] not in reviewed_order_ids:
             reviewable_orders.append(order)
     
     if not reviewable_orders:
@@ -1263,7 +1287,7 @@ def leave_review(userID):
                 save_data(TO_BE_REVIEWED_FILE, updated_to_review,
                          "OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,"
                          "RecipientName,RecipientPhone,ShipmentSize,VehicleType,Payment,"
-                         "Status,PurchaseDate,UserID,Price\n")
+                         "Status,PurchaseDate,UserID,Price,DriverID\n")
             
             print_success("Review submitted successfully!")
         else:
@@ -1274,7 +1298,7 @@ def leave_review(userID):
 def view_reviews(userID):
     print_header(f"Reviews for User {userID}")
     reviews = load_data(REVIEWS_FILE)
-    user_reviews = [review for review in reviews if review[-1] == userID]
+    user_reviews = [review for review in reviews if review[4] == userID]
     
     if not user_reviews:
         print_info("No reviews found!")
@@ -1814,12 +1838,12 @@ def generate_customer_feedback_report():
         rating_counts[review[3]] += 1
     
     print(f"\nTotal Reviews: {len(reviews)}")
-    print(f"Average Rating: {avg_rating:.1f} ⭐")
+    print(f"Average Rating: {avg_rating:.1f} ")
     
     print("\nRating Distribution:")
     for rating, count in rating_counts.items():
         percentage = (count / len(reviews)) * 100
-        print(f"{rating} ⭐: {count} ({percentage:.1f}%)")
+        print(f"{rating} : {count} ({percentage:.1f}%)")
     
     print("\nRecent Reviews:")
     for review in reviews[-5:]:  # Show last 5 reviews
