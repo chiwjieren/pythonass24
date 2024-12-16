@@ -39,7 +39,11 @@ def load_data(filename):
                          lines[0][0] == 'Username' or lines[0][0] == 'UserID'):
                 return lines[1:]
             return lines
-    except:
+    except FileNotFoundError:
+        print_error(f"File {filename} not found!")
+        return []
+    except Exception as e:
+        print_error(f"Error loading data from {filename}: {e}")
         return []
 
 def save_data(filename, data, header=None):
@@ -230,32 +234,13 @@ def assign_orders_to_drivers():
         
         selected_driver = available_drivers[driver_choice - 1]
         
-        # Select route based on source and destination
-        print("\nSelect Route:")
-        print("1. Route 1: Johor → KL → Butterworth → Kedah → Perlis")
-        print("2. Route 2: Johor → KL → Terengganu → Kelantan")
+        # Ensure the order list is long enough
+        while len(selected_order) <= 16:
+            selected_order.append('')  # Extend the list if necessary
         
-        route_choice = input("\nEnter route number (1-2): ")
-        if route_choice not in ['1', '2']:
-            print_error("Invalid route selection!")
-            return
-        
-        route = "Route 1" if route_choice == '1' else "Route 2"
-        
-        # Update order with assigned driver, route, and change status
-        for i, order in enumerate(orders):
-            if order[0] == selected_order[0]:
-                order.extend([selected_driver[0], route])  # Add DriverID and Route
-                order[12] = 'assigned'  # Update status to 'assigned'
-                orders[i] = order
-                break
-        
-        # Update driver status
-        for i, driver in enumerate(drivers):
-            if driver[0] == selected_driver[0]:
-                driver[7] = "assigned"  # Update status
-                drivers[i] = driver
-                break
+        # Update order with assigned driver and change status
+        selected_order[16] = selected_driver[0]  # Assign DriverID
+        selected_order[12] = 'Assigned'  # Update status to 'Assigned'
         
         # Save updates
         save_data(ONGOING_ORDER_FILE, orders,
@@ -263,31 +248,118 @@ def assign_orders_to_drivers():
                  "RecipientName,RecipientPhone,ShipmentSize,VehicleType,Payment,"
                  "Status,PurchaseDate,UserID,Price,DriverID,Route\n")
         
-        save_data(DRIVER_FILE, drivers,
-                 "DriverID,Username,Password,Name,Contact,Address,LicenseNo,Status\n")
-        
-        print_success(f"Order {selected_order[0]} assigned to Driver {selected_driver[0]} on {route}")
+        print_success(f"Order {selected_order[0]} assigned to Driver {selected_driver[0]}")
         
     except ValueError:
         print_error("Invalid input!")
 
-def assign_order_to_driver():
-    print_header("Assign Order to Driver")
+def update_order_status(username):
+    print_header("Update Order Status")
     
-    # Load data
-    ongoing_orders = load_data(ONGOING_ORDER_FILE)
+    # Load driver data
     drivers = load_data(DRIVER_FILE)
     
-    # Filter orders that are not yet assigned
-    unassigned_orders = [order for order in ongoing_orders if len(order) < 17 or not order[16]]
+    # Get driver's ID
+    driver_id = next((driver[0] for driver in drivers if driver[1] == username), None)
     
-    if not unassigned_orders:
-        print_info("No unassigned orders available!")
+    if not driver_id:
+        print_error("Driver not found!")
         return
     
-    # Display unassigned orders
-    print("\nUnassigned Orders:")
-    for i, order in enumerate(unassigned_orders, 1):
+    # Get orders assigned to this driver
+    orders = load_data(ONGOING_ORDER_FILE)
+    assigned_orders = [
+        order for order in orders 
+        if len(order) >= 17 and order[16] == driver_id and order[12] in ['Assigned', 'Ongoing', 'Delivered']
+    ]
+    
+    if not assigned_orders:
+        print_info("No orders to update!")
+        return
+    
+    # Display assigned orders
+    print("\nYour Assigned Orders:")
+    for i, order in enumerate(assigned_orders, 1):
+        print(f"\n{i}. Order Details:")
+        print(f"   Order ID: {order[0]}")
+        print(f"   From: {order[4]} To: {order[3]}")
+        print(f"   Item: {order[1]} (Quantity: {order[2]})")
+        print(f"   Current Status: {order[12]}")
+        # Check if the route index exists
+        if len(order) > 17:
+            print(f"   Route: {order[17]}")
+        else:
+            print("   Route: Not specified")
+        print("-" * 50)
+    
+    try:
+        choice = int(input("\nSelect order to update (0 to cancel): "))
+        if choice == 0:
+            return
+        if not (1 <= choice <= len(assigned_orders)):
+            print_error("Invalid order selection!")
+            return
+        
+        selected_order = assigned_orders[choice - 1]
+        current_status = selected_order[12]
+        
+        # Simplified status options based on current status
+        if current_status == 'Assigned':
+            new_status = 'Ongoing'
+            print_info("Starting delivery journey...")
+        elif current_status == 'Ongoing':
+            new_status = 'Delivered'
+            print_info("Marking as delivered...")
+        else:
+            print_error("Invalid order status for update!")
+            return
+            
+        # Update the status
+        for i, order in enumerate(orders):
+            if order[0] == selected_order[0]:
+                order[12] = new_status
+                orders[i] = order
+                break
+        
+        # Save the updated orders
+        save_data(ONGOING_ORDER_FILE, orders,
+                 "OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,"
+                 "RecipientName,RecipientPhone,ShipmentSize,VehicleType,Payment,"
+                 "Status,PurchaseDate,UserID,Price,DriverID,Route\n")
+        
+        print_success(f"Status updated to {new_status} successfully!")
+            
+    except ValueError:
+        print_error("Invalid input!")
+
+def confirm_order_receipt(username):
+    print_header("Confirm Order Receipt")
+    
+    # Load user data
+    users = load_data(USER_FILE)
+    
+    # Get user's ID
+    user_id = next((user[0] for user in users if user[1] == username), None)
+    
+    if not user_id:
+        print_error("User not found!")
+        return
+    
+    # Load orders
+    orders = load_data(ONGOING_ORDER_FILE)
+    
+    # Filter orders for this user
+    delivered_orders = [
+        order for order in orders 
+        if len(order) >= 17 and order[14] == user_id and order[12] == 'Delivered'
+    ]
+    
+    if not delivered_orders:
+        print_info("No delivered orders to confirm!")
+        return
+    
+    # Display delivered orders
+    for i, order in enumerate(delivered_orders, 1):
         print(f"\n{i}. Order Details:")
         print(f"   Order ID: {order[0]}")
         print(f"   From: {order[4]} To: {order[3]}")
@@ -296,43 +368,37 @@ def assign_order_to_driver():
         print("-" * 50)
     
     try:
-        order_choice = int(input("\nSelect order to assign (0 to cancel): "))
-        if order_choice == 0:
+        choice = int(input("\nSelect order to confirm receipt (0 to cancel): "))
+        if choice == 0:
             return
-        if not (1 <= order_choice <= len(unassigned_orders)):
+        if not (1 <= choice <= len(delivered_orders)):
             print_error("Invalid order selection!")
             return
         
-        selected_order = unassigned_orders[order_choice - 1]
+        selected_order = delivered_orders[choice - 1]
         
-        # Display available drivers
-        print("\nAvailable Drivers:")
-        for i, driver in enumerate(drivers, 1):
-            print(f"{i}. {driver[3]} (ID: {driver[0]})")
-        
-        driver_choice = int(input("\nSelect driver to assign (0 to cancel): "))
-        if driver_choice == 0:
-            return
-        if not (1 <= driver_choice <= len(drivers)):
-            print_error("Invalid driver selection!")
-            return
-        
-        selected_driver = drivers[driver_choice - 1]
-        
-        # Assign driver to order
-        for i, order in enumerate(ongoing_orders):
+        # Move order to completed
+        for i, order in enumerate(orders):
             if order[0] == selected_order[0]:
-                order[16] = selected_driver[0]  # Assign driver ID
-                ongoing_orders[i] = order
+                order[12] = 'Completed'
+                orders[i] = order
                 break
         
-        # Save updated orders
-        save_data(ONGOING_ORDER_FILE, ongoing_orders,
+        # Save the updated orders
+        save_data(ONGOING_ORDER_FILE, orders,
                  "OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,"
                  "RecipientName,RecipientPhone,ShipmentSize,VehicleType,Payment,"
                  "Status,PurchaseDate,UserID,Price,DriverID,Route\n")
         
-        print_success(f"Order {selected_order[0]} assigned to driver {selected_driver[3]} successfully!")
+        # Optionally, move the order to a completed orders file
+        completed_orders = load_data(COMPLETED_ORDER_FILE)
+        completed_orders.append(selected_order)
+        save_data(COMPLETED_ORDER_FILE, completed_orders,
+                 "OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,"
+                 "RecipientName,RecipientPhone,ShipmentSize,VehicleType,Payment,"
+                 "Status,PurchaseDate,UserID,Price,DriverID,Route\n")
+        
+        print_success(f"Order {selected_order[0]} confirmed as received and moved to completed orders.")
         
     except ValueError:
         print_error("Invalid input!")
@@ -437,40 +503,7 @@ def update_driver_profile(username):
     print_error("Driver not found!")
 
 def view_driver_orders(username):
-    orders = load_data(ONGOING_ORDER_FILE)
-    drivers = load_data(DRIVER_FILE)
-    
-    # Get driver ID
-    driver_id = None
-    for driver in drivers:
-        if driver[1] == username:
-            driver_id = driver[0]
-            break
-    
-    if not driver_id:
-        print_error("Driver not found!")
-        return
-    
     print_header("My Assigned Orders")
-    found = False
-    
-    for order in orders:
-        if len(order) >= 17 and order[16] == driver_id:  # Check if order has DriverID field
-            found = True
-            print("\nOrder Details:")
-            print(f"Order ID: {order[0]}")
-            print(f"From: {order[4]} To: {order[3]}")
-            print(f"Item: {order[1]} (Quantity: {order[2]})")
-            print(f"Vehicle Type: {order[10]}")
-            print(f"Route: {order[17]}")
-            print(f"Status: {order[12]}")
-            print("-" * 50)
-    
-    if not found:
-        print_info("No orders assigned!")
-
-def update_order_status(username):
-    print_header("Update Order Status")
     
     # Load driver data
     drivers = load_data(DRIVER_FILE)
@@ -482,67 +515,35 @@ def update_order_status(username):
         print_error("Driver not found!")
         return
     
-    # Get orders assigned to this driver
+    # Load orders
     orders = load_data(ONGOING_ORDER_FILE)
-    assigned_orders = [
+    
+    # Filter orders for this driver
+    driver_orders = [
         order for order in orders 
-        if len(order) >= 17 and order[16] == driver_id and order[12] in ['assigned', 'Pending', 'Ongoing']
+        if len(order) >= 17 and order[16] == driver_id and order[12] in ['Assigned', 'Ongoing', 'Delivered']
     ]
     
-    if not assigned_orders:
-        print_info("No orders to update!")
+    if not driver_orders:
+        print_info("No assigned orders found!")
         return
     
-    # Display assigned orders
-    print("\nYour Assigned Orders:")
-    for i, order in enumerate(assigned_orders, 1):
-        print(f"\n{i}. Order Details:")
-        print(f"   Order ID: {order[0]}")
-        print(f"   From: {order[4]} To: {order[3]}")
-        print(f"   Item: {order[1]} (Quantity: {order[2]})")
-        print(f"   Current Status: {order[12]}")
-        print(f"   Route: {order[17]}")
+    # Display driver orders
+    for order in driver_orders:
+        print("\nOrder Details:")
+        print(f"Order ID: {order[0]}")
+        print(f"From: {order[4]} To: {order[3]}")
+        print(f"Item: {order[1]} (Quantity: {order[2]})")
+        print(f"Vehicle Type: {order[10]}")
+        # Check if the route index exists
+        if len(order) > 17:
+            print(f"Route: {order[17]}")
+        else:
+            print("Route: Not specified")
+        print(f"Status: {order[12]}")
         print("-" * 50)
     
-    try:
-        choice = int(input("\nSelect order to update (0 to cancel): "))
-        if choice == 0:
-            return
-        if not (1 <= choice <= len(assigned_orders)):
-            print_error("Invalid order selection!")
-            return
-        
-        selected_order = assigned_orders[choice - 1]
-        current_status = selected_order[12]
-        
-        # Simplified status options based on current status
-        if current_status in ['assigned', 'Pending']:
-            new_status = 'Ongoing'
-            print_info("Starting delivery journey...")
-        elif current_status == 'Ongoing':
-            new_status = 'Delivered'
-            print_info("Marking as delivered...")
-        else:
-            print_error("Invalid order status for update!")
-            return
-            
-        # Update the status
-        for i, order in enumerate(orders):
-            if order[0] == selected_order[0]:
-                order[12] = new_status
-                orders[i] = order
-                break
-        
-        # Save the updated orders
-        save_data(ONGOING_ORDER_FILE, orders,
-                 "OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,"
-                 "RecipientName,RecipientPhone,ShipmentSize,VehicleType,Payment,"
-                 "Status,PurchaseDate,UserID,Price,DriverID,Route\n")
-        
-        print_success(f"Status updated to {new_status} successfully!")
-            
-    except ValueError:
-        print_error("Invalid input!")
+    input("Press Enter to continue...")
 
 def view_routes():
     print_header("Route Information")
@@ -929,16 +930,18 @@ def view_orders(userID):
                 print(f"Item: {order[1]} (Quantity: {order[2]})")
                 print(f"From: {order[4]} To: {order[3]}")
                 print(f"Status: {order[12]}")
-                
                 # Show tracking status based on order status
-                if status == 'Ongoing':
-                    if order[12] == 'Pending':
-                        print("Tracking: 📦 Order confirmed, waiting for pickup")
-                    elif order[12] == 'Ongoing':
-                        print("Tracking: 🚚 In transit to destination")
-                elif status == 'Completed':
+                if order[12] == 'Pending':
+                    print("Tracking: 📦 Order confirmed, waiting for pickup")
+                elif order[12] == 'Assigned':
+                    print("Tracking: 🔄 Driver assigned, preparing for pickup")
+                elif order[12] == 'Ongoing':
+                    print("Tracking: 🚚 In transit to destination")
+                elif order[12] == 'Delivered':
+                    print("Tracking: 📬 Package delivered")
+                elif order[12] == 'Completed':
                     print("Tracking: ✅ Order completed")
-                elif status == 'Cancelled':
+                elif order[12] == 'Cancelled':
                     print("Tracking: ❌ Order cancelled")
                 
                 print(f"Order Date: {order[13]}")
@@ -1736,6 +1739,9 @@ def generate_revenue_report():
 def generate_driver_performance_report():
     print_header("Driver Performance Report")
     
+    # Load driver data
+    drivers = load_data(DRIVER_FILE)
+    
     # Get date range
     while True:
         start_date = input("Enter start date (YYYY-MM-DD): ").strip()
@@ -1820,6 +1826,59 @@ def generate_customer_feedback_report():
         print_review_details(review)
     
     print_divider()
+    input("Press Enter to continue...")
+
+def view_user_orders(username):
+    print_header("My Orders")
+    
+    # Load user data
+    users = load_data(USER_FILE)
+    
+    # Get user's ID
+    user_id = next((user[0] for user in users if user[1] == username), None)
+    
+    if not user_id:
+        print_error("User not found!")
+        return
+    
+    # Load orders
+    orders = load_data(ONGOING_ORDER_FILE)
+    
+    # Debug: Print all orders to verify data
+    print("Debug: All Orders Loaded")
+    for order in orders:
+        print(order)
+    
+    # Filter orders for this user
+    user_orders = [
+        order for order in orders 
+        if len(order) >= 17 and order[14] == user_id and order[12] in ['Pending', 'Assigned', 'Ongoing', 'Cancelled', 'Completed']
+    ]
+    
+    # Debug: Print filtered orders
+    print("Debug: Filtered User Orders")
+    for order in user_orders:
+        print(order)
+    
+    if not user_orders:
+        print_info("No orders found!")
+        return
+    
+    # Display user orders
+    for order in user_orders:
+        print("\nOrder Details:")
+        print(f"Order ID: {order[0]}")
+        print(f"From: {order[4]} To: {order[3]}")
+        print(f"Item: {order[1]} (Quantity: {order[2]})")
+        print(f"Vehicle Type: {order[10]}")
+        print(f"Status: {order[12]}")
+        # Check if the route index exists
+        if len(order) > 17:
+            print(f"Route: {order[17]}")
+        else:
+            print("Route: Not specified")
+        print("-" * 50)
+    
     input("Press Enter to continue...")
 
 main_menu()
