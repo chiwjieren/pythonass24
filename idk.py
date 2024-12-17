@@ -1236,6 +1236,7 @@ def leave_review(userID):
     # Get orders that can be reviewed
     to_be_reviewed = load_data(TO_BE_REVIEWED_FILE)
     completed_orders = load_data(COMPLETED_ORDER_FILE)
+    cancelled_orders = load_data(CANCELLED_ORDER_FILE)  # Add cancelled orders
     reviews = load_data(REVIEWS_FILE)
     
     # Get IDs of orders already reviewed
@@ -1261,6 +1262,14 @@ def leave_review(userID):
             reviewable_orders.append(order)
             added_order_ids.add(order[0])
     
+    # Add cancelled orders that haven't been reviewed
+    for order in cancelled_orders:
+        if (order[14] == userID and 
+            order[0] not in reviewed_order_ids and 
+            order[0] not in added_order_ids):
+            reviewable_orders.append(order)
+            added_order_ids.add(order[0])
+    
     if not reviewable_orders:
         print_info("No orders available for review!")
         return
@@ -1269,63 +1278,65 @@ def leave_review(userID):
     for i, order in enumerate(reviewable_orders, 1):
         print(f"\n{i}. Order Details:")
         print(f"   Order ID: {order[0]}")
-        print(f"   Item: {order[1]}")
+        print(f"   Item: {order[1]} (Quantity: {order[2]})")
         print(f"   Status: {order[12]}")
         print(f"   Date: {order[13]}")
         print("-" * 50)
 
     try:
-        choice = int(input("Select order to review (0 to go back): "))
+        choice = int(input("\nSelect order to review (0 to cancel): "))
         if choice == 0:
             return
-        if 1 <= choice <= len(reviewable_orders):
-            order_to_review = reviewable_orders[choice - 1]
+        if not (1 <= choice <= len(reviewable_orders)):
+            print_error("Invalid order selection!")
+            return
             
-            # Get review details
-            print_divider()
-            review_text = input("Enter your review: ").strip()
-            while True:
-                try:
-                    rating = int(input("Enter rating (1-5 stars): "))
-                    if 1 <= rating <= 5:
-                        break
-                    print_error("Rating must be between 1 and 5!")
-                except ValueError:
-                    print_error("Invalid input! Please enter a number.")
-            
-            # Use current date for review
-            review_date = datetime.datetime.now().strftime("%Y-%m-%d")
-            
-            # Create review record
-            review_data = [
-                order_to_review[0],  # Order ID
-                order_to_review[1],  # Item name
-                review_text,         # Review text
-                str(rating),         # Rating
-                userID,              # User ID
-                review_date          # Review date
+        order_to_review = reviewable_orders[choice - 1]
+        
+        # Get review details
+        print_divider()
+        review_text = input("Enter your review: ").strip()
+        while True:
+            try:
+                rating = int(input("Enter rating (1-5 stars): "))
+                if 1 <= rating <= 5:
+                    break
+                print_error("Rating must be between 1 and 5!")
+            except ValueError:
+                print_error("Invalid input! Please enter a number.")
+        
+        # Use current date for review
+        review_date = datetime.datetime.now().strftime("%Y-%m-%d")
+        
+        # Create review record
+        review_data = [
+            order_to_review[0],  # Order ID
+            order_to_review[1],  # Item name
+            review_text,         # Review text
+            str(rating),         # Rating
+            userID,              # User ID
+            review_date          # Review date
+        ]
+        
+        # Add to reviews file
+        reviews = load_data(REVIEWS_FILE)
+        reviews.append(review_data)
+        save_data(REVIEWS_FILE, reviews, 
+                 "OrderID,ItemName,Review,Rating,UserID,ReviewDate\n")
+        
+        # Remove from to_be_reviewed if it's there
+        if order_to_review in to_be_reviewed:
+            updated_to_review = [
+                order for order in to_be_reviewed 
+                if order[0] != order_to_review[0]
             ]
-            
-            # Add to reviews file
-            reviews = load_data(REVIEWS_FILE)
-            reviews.append(review_data)
-            save_data(REVIEWS_FILE, reviews, 
-                     "OrderID,ItemName,Review,Rating,UserID,ReviewDate\n")
-            
-            # Remove from to_be_reviewed if it's there
-            if order_to_review in to_be_reviewed:
-                updated_to_review = [
-                    order for order in to_be_reviewed 
-                    if order[0] != order_to_review[0]
-                ]
-                save_data(TO_BE_REVIEWED_FILE, updated_to_review,
-                         "OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,"
-                         "RecipientName,RecipientPhone,ShipmentSize,VehicleType,Payment,"
-                         "Status,PurchaseDate,UserID,Price,DriverID\n")
-            
-            print_success("Review submitted successfully!")
-        else:
-            print_error("Invalid choice!")
+            save_data(TO_BE_REVIEWED_FILE, updated_to_review,
+                     "OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,"
+                     "RecipientName,RecipientPhone,ShipmentSize,VehicleType,Payment,"
+                     "Status,PurchaseDate,UserID,Price,DriverID\n")
+        
+        print_success("Review submitted successfully!")
+        
     except ValueError:
         print_error("Invalid input!")
 
@@ -1337,7 +1348,6 @@ def view_reviews(userID):
     
     # Filter reviews for this user
     user_reviews = [review for review in reviews if review[4] == userID]
-    
     if not user_reviews:
         print_info("No reviews found!")
         return
@@ -2052,21 +2062,17 @@ def generate_daily_orders_report():
     completed = load_data(COMPLETED_ORDER_FILE)
     cancelled = load_data(CANCELLED_ORDER_FILE)
     
-    # Filter orders for today
+    # Filter orders for the specified date
     today_ongoing = [order for order in ongoing if order[13] == report_date]
     today_completed = [order for order in completed if order[13] == report_date]
     today_cancelled = [order for order in cancelled if order[13] == report_date]
     
-    print(f"\nReport for {report_date}")
+    print(f"\nDaily Report for {report_date}")
     print_divider()
     print(f"New Orders: {len(today_ongoing)}")
     print(f"Completed Orders: {len(today_completed)}")
     print(f"Cancelled Orders: {len(today_cancelled)}")
-    
-    if today_ongoing:
-        print("\nNew Orders Details:")
-        for order in today_ongoing:
-            print_order_details(order)
+    print(f"Total Orders: {len(today_ongoing) + len(today_completed) + len(today_cancelled)}")
     
     print_divider()
     input("Press Enter to continue...")
