@@ -9,6 +9,11 @@ ORDER_ID_FILE = "order_ids.txt"
 REVIEWS_FILE = "reviews.txt"
 TO_BE_REVIEWED_FILE = "tobereview.txt"
 REVIEWED_FILE = "reviewed.txt"
+VEHICLE_FILE = "vehicles.txt"
+MAINTENANCE_FILE = "maintenance.txt"
+FUEL_LOG_FILE = "fuel_logs.txt"
+FUEL_RATES_FILE = "fuel_rates.txt"
+ROUTE_DISTANCES_FILE = "route_distances.txt"
 
 # Add these constants at the top with other constants
 STOPOVER_TIME = 30  # minutes
@@ -20,13 +25,18 @@ def load_data(filename):
     try:
         with open(filename, 'r') as file:
             lines = [line.strip().split(',') for line in file if line.strip()]
+            if not lines:  # If file is empty
+                return []
             # Skip header if it exists
             if lines and (lines[0][0] == 'DriverID' or lines[0][0] == 'OrderID' or 
-                         lines[0][0] == 'Username' or lines[0][0] == 'UserID'):
+                         lines[0][0] == 'Username' or lines[0][0] == 'UserID' or
+                         lines[0][0] == 'VehicleID' or lines[0][0] == 'VehicleType' or
+                         lines[0][0] == 'RouteName'):
                 return lines[1:]
             return lines
     except FileNotFoundError:
-        print_error(f"File {filename} not found!")
+        # Create the file with appropriate header
+        initialize_system_files()
         return []
     except Exception as e:
         print_error(f"Error loading data from {filename}: {e}")
@@ -39,11 +49,32 @@ def save_data(filename, data, header=None):
         for item in data:
             file.write(','.join(item) + '\n')
 
-def get_next_id(prefix, current_ids):
-    if not current_ids:
-        return f"{prefix}001"
-    last_id = max(int(id[len(prefix):]) for id in current_ids)
-    return f"{prefix}{str(last_id + 1).zfill(3)}"
+def get_next_id(prefix, current_ids=None):
+    """Get next ID considering all order files"""
+    if prefix == 'ORD':  # Special handling for order IDs
+        # Load orders from all order-related files
+        ongoing_orders = load_data(ONGOING_ORDER_FILE)
+        completed_orders = load_data(COMPLETED_ORDER_FILE)
+        cancelled_orders = load_data(CANCELLED_ORDER_FILE)
+        
+        # Combine all order IDs
+        all_order_ids = []
+        all_order_ids.extend(order[0] for order in ongoing_orders)
+        all_order_ids.extend(order[0] for order in completed_orders)
+        all_order_ids.extend(order[0] for order in cancelled_orders)
+        
+        if not all_order_ids:
+            return f"{prefix}001"
+            
+        # Extract numbers from order IDs and find the maximum
+        max_num = max(int(order_id[3:]) for order_id in all_order_ids)
+        return f"{prefix}{str(max_num + 1).zfill(3)}"
+    else:
+        # Original logic for other ID types
+        if not current_ids:
+            return f"{prefix}001"
+        last_id = max(int(id[len(prefix):]) for id in current_ids)
+        return f"{prefix}{str(last_id + 1).zfill(3)}"
 
 # UI utility functions
 def print_header(text):
@@ -77,7 +108,7 @@ def print_divider():
 def print_order_details(order):
     width = 60
     print("\n┌" + "─" * (width-2) + "┐")
-    print(f"│ Order ID: {order[0]:<{width-13}}│")
+    print(f" Order ID: {order[0]:<{width-13}}│")
     print(f"│ Item: {order[1]:<{width-9}}│")
     print(f"│ Quantity: {order[2]:<{width-12}}│")
     print(f"│ Status: {order[12]:<{width-11}}│")
@@ -132,6 +163,9 @@ def calculate_order_price(quantity, vehicle_type, shipment_size):
 
 # Main menu and system selection
 def main_menu():
+    # Initialize system files
+    initialize_system_files()
+    
     while True:
         print_header("LOGISTICS MANAGEMENT SYSTEM")
         options = ["Driver Access", "Customer Access", "Admin Access", "Exit"]
@@ -245,10 +279,6 @@ def assign_orders_to_drivers():
         
         selected_order = pending_orders[order_choice - 1]
         
-        # Ensure the order list is long enough
-        while len(selected_order) < 18:  # Ensure it has at least 18 elements
-            selected_order.append('')  # Extend the list if necessary
-        
         # Show available drivers
         print("\nAvailable Drivers:")
         for i, driver in enumerate(available_drivers, 1):
@@ -275,6 +305,10 @@ def assign_orders_to_drivers():
             return
         
         selected_route = f"Route {route_choice}"  # Assign simplified route
+        
+        # Ensure the order list is long enough
+        while len(selected_order) < 18:  # Ensure it has at least 18 elements
+            selected_order.append('')  # Extend the list if necessary
         
         # Update order with assigned driver, route, and change status
         selected_order[16] = selected_driver[0]  # Assign DriverID
@@ -769,8 +803,6 @@ def customer_login():
         if user[1] == username and user[2] == password:
             print_success(f"Login successful! Welcome {username}")
             return user[0]
-    print_error("Invalid credentials!")
-    return None
 
 def customer_welcome(userID):
     while True:
@@ -1000,7 +1032,6 @@ def view_orders(userID):
 def cancel_order(userID):
     orders = load_data(ONGOING_ORDER_FILE)
     user_orders = [order for order in orders if order[-2] == userID and order[12].lower() == 'pending']
-    
     if not user_orders:
         print_info("No orders available to cancel!")
         return
@@ -1115,97 +1146,72 @@ def order_received(userID):
         print_error("Invalid input!")
 
 def reorder_order(userID):
-    # Get both completed and cancelled orders
+    print_header("Reorder Order")
+    
+    # Load orders
     completed_orders = load_data(COMPLETED_ORDER_FILE)
     cancelled_orders = load_data(CANCELLED_ORDER_FILE)
     
-    all_reorderable_orders = []
+    # Filter orders for this user
+    user_completed_orders = [
+        order for order in completed_orders 
+        if len(order) >= 15 and order[14] == userID
+    ]
     
-    # Process completed orders
-    if completed_orders:
-        completed = [order for order in completed_orders if order[-2] == userID]
-        all_reorderable_orders.extend(completed)
-
-    # Process cancelled orders
-    if cancelled_orders:
-        cancelled = [order for order in cancelled_orders if order[-2] == userID]
-        all_reorderable_orders.extend(cancelled)
-
-    if not all_reorderable_orders:
-        print_info("No orders available to reorder!")
+    user_cancelled_orders = [
+        order for order in cancelled_orders 
+        if len(order) >= 15 and order[14] == userID
+    ]
+    
+    # Combine completed and cancelled orders
+    user_orders = user_completed_orders + user_cancelled_orders
+    
+    if not user_orders:
+        print_info("No completed or cancelled orders found!")
         return
-
-    print_header("Orders Available to Reorder")
-    for i, order in enumerate(all_reorderable_orders, 1):
-        print_order_details(order)
-        print_divider()
-
+    
+    # Display user orders
+    print("\nOrders available for reorder:")
+    for i, order in enumerate(user_orders, 1):
+        print(f"\n{i}. Order Details:")
+        print(f"   Order ID: {order[0]}")
+        print(f"   From: {order[4]} To: {order[3]}")
+        print(f"   Item: {order[1]} (Quantity: {order[2]})")
+        print(f"   Status: {'Completed' if order in user_completed_orders else 'Cancelled'}")
+        print("-" * 50)
+    
     try:
-        choice = int(input("Select order number to reorder (0 to go back): "))
+        choice = int(input("\nSelect order to reorder (0 to cancel): "))
         if choice == 0:
             return
-        if 1 <= choice <= len(all_reorderable_orders):
-            order_to_reorder = all_reorderable_orders[choice - 1]
+        if not (1 <= choice <= len(user_orders)):
+            print_error("Invalid order selection!")
+            return
             
-            # Automatically set new date to current date
-            new_date = datetime.datetime.now().strftime("%Y-%m-%d")
-            
-            # Validate that new date is after original order date
-            try:
-                old_date_obj = datetime.datetime.strptime(order_to_reorder[13], "%Y-%m-%d")
-                new_date_obj = datetime.datetime.strptime(new_date, "%Y-%m-%d")
-                
-                if new_date_obj.date() <= old_date_obj.date():
-                    print_error(f"Cannot reorder on the same day as the original order ({order_to_reorder[13]})!")
-                    return
-                    
-            except ValueError:
-                # If original date was invalid, continue with current date
-                pass
-            
-            # Generate new order ID
-            orders = load_data(ORDER_ID_FILE)
-            order_ids = [order[0] for order in orders]
-            new_order_id = get_next_id('ORD', order_ids)
-            
-            # Create new order with same details but new ID, date and Pending status
-            new_order = order_to_reorder.copy()
-            new_order[0] = new_order_id
-            new_order[12] = 'Pending'
-            new_order[13] = new_date
-            
-            # Recalculate price
-            price = calculate_order_price(
-                int(new_order[2]),  # quantity
-                new_order[10],      # vehicle_type
-                new_order[9]        # shipment_size
-            )
-            new_order[15] = str(price)
-            
-            # Show price and confirm
-            print_info(f"Total Order Price: RM {price}")
-            confirm = input("Confirm reorder? (y/n): ").lower()
-            if confirm != 'y':
-                print_info("Reorder cancelled.")
-                return
-            
-            # Save to ongoing orders
-            ongoing_orders = load_data(ONGOING_ORDER_FILE)
-            ongoing_orders.append(new_order)
-            save_data(ONGOING_ORDER_FILE, ongoing_orders,
-                     "OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,"
-                     "RecipientName,RecipientPhone,ShipmentSize,VehicleType,Payment,"
-                     "Status,PurchaseDate,UserID,Price\n")
-            
-            # Save order ID
-            with open(ORDER_ID_FILE, 'a') as file:
-                file.write(f"{new_order_id}\n")
-            
-            print_success(f"Order reordered successfully! New Order ID: {new_order_id}")
-        else:
-            print_error("Invalid choice!")
+        selected_order = user_orders[choice - 1]
+        
+        # Get existing order IDs to generate new ID
+        existing_orders = load_data(ONGOING_ORDER_FILE)
+        order_ids = [order[0] for order in existing_orders]
+        new_order_id = get_next_id('ORD', order_ids)
+        
+        # Create new order based on selected order, but without driver info
+        new_order = selected_order[:16]  # Only copy up to the price field
+        new_order[0] = new_order_id      # Set new order ID
+        new_order[12] = 'Pending'        # Set status to Pending
+        new_order[13] = datetime.datetime.now().strftime("%Y-%m-%d")  # Update date
+        
+        # Add the new order to ongoing orders
+        existing_orders.append(new_order)
+        save_data(ONGOING_ORDER_FILE, existing_orders,
+                 "OrderID,ItemName,Quantity,ShipTo,ShipFrom,SenderName,SenderPhone,"
+                 "RecipientName,RecipientPhone,ShipmentSize,VehicleType,Payment,"
+                 "Status,PurchaseDate,UserID,Price\n")
+        
+        print_success(f"Order {new_order_id} has been successfully created!")
+        
     except ValueError:
-        print_error("Invalid input!")
+        print_error("Invalid input! Please enter a number.")
 
 def ratings_and_reviews(userID):
     while True:
@@ -1227,24 +1233,33 @@ def ratings_and_reviews(userID):
             print_error("Invalid input!")
 
 def leave_review(userID):
-    # Get both completed and cancelled orders that can be reviewed
+    # Get orders that can be reviewed
     to_be_reviewed = load_data(TO_BE_REVIEWED_FILE)
     completed_orders = load_data(COMPLETED_ORDER_FILE)
+    reviews = load_data(REVIEWS_FILE)
     
-    # Combine orders that can be reviewed
+    # Get IDs of orders already reviewed
+    reviewed_order_ids = {review[0] for review in reviews}  # Using set for faster lookup
+    
+    # Create a set to track added order IDs to prevent duplicates
+    added_order_ids = set()
     reviewable_orders = []
     
-    # Add orders from to_be_reviewed
-    reviewable_orders.extend([order for order in to_be_reviewed if order[14] == userID])
-    
-    # Add completed orders that haven't been reviewed yet
-    reviews = load_data(REVIEWS_FILE)
-    reviewed_order_ids = [review[0] for review in reviews]
+    # Add orders from to_be_reviewed if not already reviewed
+    for order in to_be_reviewed:
+        if (order[14] == userID and 
+            order[0] not in reviewed_order_ids and 
+            order[0] not in added_order_ids):
+            reviewable_orders.append(order)
+            added_order_ids.add(order[0])
     
     # Add completed orders that haven't been reviewed
     for order in completed_orders:
-        if order[14] == userID and order[0] not in reviewed_order_ids:
+        if (order[14] == userID and 
+            order[0] not in reviewed_order_ids and 
+            order[0] not in added_order_ids):
             reviewable_orders.append(order)
+            added_order_ids.add(order[0])
     
     if not reviewable_orders:
         print_info("No orders available for review!")
@@ -1268,7 +1283,7 @@ def leave_review(userID):
             
             # Get review details
             print_divider()
-            review = input("Enter your review: ").strip()
+            review_text = input("Enter your review: ").strip()
             while True:
                 try:
                     rating = int(input("Enter rating (1-5 stars): "))
@@ -1280,19 +1295,22 @@ def leave_review(userID):
             
             # Use current date for review
             review_date = datetime.datetime.now().strftime("%Y-%m-%d")
+            
+            # Create review record
             review_data = [
                 order_to_review[0],  # Order ID
                 order_to_review[1],  # Item name
-                review,              # Review text
+                review_text,         # Review text
                 str(rating),         # Rating
                 userID,              # User ID
-                review_date         # Review date
+                review_date          # Review date
             ]
             
             # Add to reviews file
             reviews = load_data(REVIEWS_FILE)
             reviews.append(review_data)
-            save_data(REVIEWS_FILE, reviews, "OrderID,ItemName,Review,Rating,UserID,ReviewDate\n")
+            save_data(REVIEWS_FILE, reviews, 
+                     "OrderID,ItemName,Review,Rating,UserID,ReviewDate\n")
             
             # Remove from to_be_reviewed if it's there
             if order_to_review in to_be_reviewed:
@@ -1312,17 +1330,32 @@ def leave_review(userID):
         print_error("Invalid input!")
 
 def view_reviews(userID):
-    print_header(f"Reviews for User {userID}")
+    print_header("My Reviews")
+    
+    # Load reviews
     reviews = load_data(REVIEWS_FILE)
+    
+    # Filter reviews for this user
     user_reviews = [review for review in reviews if review[4] == userID]
     
     if not user_reviews:
         print_info("No reviews found!")
         return
-
+    
+    # Sort reviews by date (newest first)
+    user_reviews.sort(key=lambda x: x[5], reverse=True)
+    
     for review in user_reviews:
-        print_review_details(review)
-        print_divider()
+        print("\nOrder Details:")
+        print(f"Order ID: {review[0]}")
+        print(f"Item: {review[1]}")
+        print(f"Rating: {'★' * int(review[3])}")  # Display stars based on rating
+        print(f"Review: {review[2]}")
+        print(f"Date: {review[5]}")
+        print("-" * 50)
+    
+    print_divider()
+    input("Press Enter to continue...")
 
 # Add this utility function if not already present
 def validate_date(date_str, allow_future=False):
@@ -1556,49 +1589,223 @@ def remove_driver():
     print_success("Driver removed successfully!")
 
 def manage_fuel_and_vehicle_consumption():
-    print_header("Fuel & Vehicle Consumption")
+    while True:
+        print_header("Fuel & Vehicle Consumption Management")
+        options = [
+            "View Completed Orders Fuel Analysis",
+            "View Fuel Consumption History",
+            "Update Fuel Rates",
+            "View Route Analysis",
+            "Back"
+        ]
+        print_menu("Fuel Management Options", options)
+        
+        try:
+            choice = int(input("\nEnter choice (1-5): "))
+            if choice == 1:
+                view_completed_orders_fuel_analysis()
+            elif choice == 2:
+                view_fuel_consumption_history()
+            elif choice == 3:
+                update_fuel_rates()
+            elif choice == 4:
+                view_route_analysis()
+            elif choice == 5:
+                break
+            else:
+                print_error("Invalid choice!")
+        except ValueError:
+            print_error("Invalid input!")
+
+def view_completed_orders_fuel_analysis():
+    print_header("Fuel Consumption Analysis")
     
-    # Sample fuel consumption data (in future, this could be loaded from a file)
-    fuel_data = {
-        "Specialized Carrier": {"consumption": 8, "price": 2.05},  # L/100km
-        "Van": {"consumption": 12, "price": 2.05},
-        "Truck": {"consumption": 20, "price": 2.05}
-    }
+    # Load necessary data
+    completed_orders = load_data(COMPLETED_ORDER_FILE)
+    fuel_logs = load_data(FUEL_LOG_FILE)
     
-    # Calculate consumption for active routes
-    orders = load_data(ONGOING_ORDER_FILE)
-    active_orders = [order for order in orders if order[12].lower() in ['ongoing', 'at hub']]
+    # Get set of already logged order IDs
+    logged_orders = {log[0] for log in fuel_logs}
     
-    route_distances = {
-        "Route 1": 850,  # km (Johor-KL-Butterworth-Kedah-Perlis)
-        "Route 2": 780   # km (Johor-KL-Terengganu-Kelantan)
-    }
+    # Get completed orders from last 30 days that haven't been logged yet
+    recent_completed = [
+        order for order in completed_orders 
+        if (datetime.datetime.now() - datetime.datetime.strptime(order[13], "%Y-%m-%d")).days <= 30
+        and len(order) >= 18  # Ensure order has route information
+        and order[0] not in logged_orders  # Only include orders not already logged
+    ]
     
-    total_fuel_cost = 0
-    print("\nActive Routes Fuel Consumption:")
+    fuel_rates = load_fuel_rates()
+    route_distances = load_route_distances()
+    current_fuel_price = 2.05  # RM per liter
     
-    for order in active_orders:
-        if len(order) >= 18:  # Check if order has route information
-            vehicle_type = order[10]
+    if not recent_completed:
+        print_info("No new completed orders to analyze!")
+        return
+    
+    total_fuel = 0
+    total_cost = 0
+    
+    print("\nCompleted Orders Analysis (Last 30 days):")
+    
+    # Group orders by vehicle type
+    vehicle_orders = {}
+    for order in recent_completed:
+        vehicle_type = order[10]
+        if vehicle_type not in vehicle_orders:
+            vehicle_orders[vehicle_type] = []
+        vehicle_orders[vehicle_type].append(order)
+    
+    # Display analysis by vehicle type
+    for vehicle_type, orders in vehicle_orders.items():
+        print(f"\n{vehicle_type}:")
+        vehicle_fuel = 0
+        vehicle_cost = 0
+        
+        for order in orders:
             route = order[17]
-            
-            if vehicle_type in fuel_data and route in route_distances:
+            if route in route_distances and vehicle_type in fuel_rates:
                 distance = route_distances[route]
-                consumption = fuel_data[vehicle_type]["consumption"]
-                price = fuel_data[vehicle_type]["price"]
+                consumption_rate = fuel_rates[vehicle_type]
                 
-                fuel_needed = (distance * consumption) / 100  # L
-                cost = fuel_needed * price
-                total_fuel_cost += cost
+                # Calculate fuel used for this trip
+                fuel_used = (distance * consumption_rate) / 100  # L
+                cost = fuel_used * current_fuel_price
+                
+                vehicle_fuel += fuel_used
+                vehicle_cost += cost
+                total_fuel += fuel_used
+                total_cost += cost
                 
                 print(f"\nOrder {order[0]}:")
-                print(f"Vehicle: {vehicle_type}")
                 print(f"Route: {route} ({distance}km)")
-                print(f"Estimated Fuel Needed: {fuel_needed:.2f}L")
-                print(f"Estimated Cost: RM{cost:.2f}")
+                print(f"Fuel Used: {fuel_used:.2f}L")
+                print(f"Cost: RM{cost:.2f}")
+                print(f"Completion Date: {order[13]}")
+                
+                # Log fuel consumption only if not already logged
+                if order[0] not in logged_orders:
+                    log_fuel_consumption(order[0], vehicle_type, distance, fuel_used, cost)
+        
+        print(f"\nTotal for {vehicle_type}:")
+        print(f"Orders: {len(orders)}")
+        print(f"Fuel Used: {vehicle_fuel:.2f}L")
+        print(f"Cost: RM{vehicle_cost:.2f}")
+        print("-" * 50)
+    
+    print("\nOverall Summary:")
+    print(f"Total New Orders Analyzed: {len(recent_completed)}")
+    print(f"Total Fuel Used: {total_fuel:.2f}L")
+    print(f"Total Cost: RM{total_cost:.2f}")
+    print(f"Average Fuel per Order: {(total_fuel/len(recent_completed)):.2f}L")
+    print(f"Average Cost per Order: RM{(total_cost/len(recent_completed)):.2f}")
     
     print_divider()
-    print(f"Total Estimated Fuel Cost: RM{total_fuel_cost:.2f}")
+    input("Press Enter to continue...")
+
+def log_fuel_consumption(order_id, vehicle_type, distance, fuel_used, cost):
+    """Log fuel consumption details to file"""
+    fuel_logs = load_data(FUEL_LOG_FILE)
+    
+    log_entry = [
+        order_id,
+        vehicle_type,
+        str(distance),
+        f"{fuel_used:.2f}",
+        f"{cost:.2f}",
+        datetime.datetime.now().strftime("%Y-%m-%d")
+    ]
+    
+    fuel_logs.append(log_entry)
+    save_data(FUEL_LOG_FILE, fuel_logs,
+             "OrderID,VehicleType,Distance,FuelUsed,Cost,Date\n")
+
+def view_fuel_consumption_history():
+    print_header("Fuel Consumption History")
+    
+    fuel_logs = load_data(FUEL_LOG_FILE)
+    if not fuel_logs:
+        print_info("No fuel consumption history found!")
+        return
+    
+    # Sort logs by date (newest first)
+    fuel_logs.sort(key=lambda x: x[5], reverse=True)
+    
+    # Calculate totals
+    total_distance = sum(float(log[2]) for log in fuel_logs)
+    total_fuel = sum(float(log[3]) for log in fuel_logs)
+    total_cost = sum(float(log[4]) for log in fuel_logs)
+    
+    print("\nRecent Consumption Records:")
+    for log in fuel_logs[:10]:  # Show last 10 records
+        print(f"\nOrder: {log[0]}")
+        print(f"Vehicle: {log[1]}")
+        print(f"Distance: {log[2]}km")
+        print(f"Fuel Used: {log[3]}L")
+        print(f"Cost: RM{log[4]}")
+        print(f"Date: {log[5]}")
+        print("-" * 50)
+    
+    print("\nOverall Statistics:")
+    print(f"Total Distance Covered: {total_distance:.2f}km")
+    print(f"Total Fuel Used: {total_fuel:.2f}L")
+    print(f"Total Cost: RM{total_cost:.2f}")
+    print(f"Average Consumption: {(total_fuel/total_distance*100):.2f}L/100km")
+    
+    print_divider()
+    input("Press Enter to continue...")
+
+def update_fuel_rates():
+    print_header("Update Fuel Rates")
+    
+    fuel_rates = load_fuel_rates()
+    
+    print("\nCurrent Fuel Rates (L/100km):")
+    for vehicle, rate in fuel_rates.items():
+        print(f"{vehicle}: {rate:.1f}")
+    
+    print("\nSelect vehicle type to update:")
+    vehicle_types = list(fuel_rates.keys())
+    for i, v_type in enumerate(vehicle_types, 1):
+        print(f"{i}. {v_type}")
+    
+    try:
+        choice = int(input("\nEnter choice (0 to cancel): "))
+        if choice == 0:
+            return
+        if 1 <= choice <= len(vehicle_types):
+            vehicle_type = vehicle_types[choice - 1]
+            new_rate = float(input(f"Enter new rate for {vehicle_type} (L/100km): "))
+            if new_rate <= 0:
+                print_error("Rate must be greater than 0!")
+                return
+            
+            fuel_rates[vehicle_type] = new_rate
+            save_fuel_rates(fuel_rates)
+            print_success("Fuel rate updated successfully!")
+        else:
+            print_error("Invalid choice!")
+    except ValueError:
+        print_error("Invalid input! Please enter a number.")
+
+def view_route_analysis():
+    print_header("Route Analysis")
+    
+    route_distances = load_route_distances()
+    fuel_rates = load_fuel_rates()
+    current_fuel_price = 2.05  # RM per liter
+    
+    print("\nRoute Analysis:")
+    for route, distance in route_distances.items():
+        print(f"\n{route} ({distance}km):")
+        print("Estimated Consumption by Vehicle Type:")
+        for vehicle, rate in fuel_rates.items():
+            fuel_needed = (distance * rate) / 100
+            cost = fuel_needed * current_fuel_price
+            print(f"{vehicle}:")
+            print(f"  Fuel Needed: {fuel_needed:.2f}L")
+            print(f"  Estimated Cost: RM{cost:.2f}")
+    
     print_divider()
     input("Press Enter to continue...")
 
@@ -1633,29 +1840,168 @@ def vehicle_management_and_maintenance():
 
 def view_vehicle_status():
     print_header("Vehicle Status")
-    print("\nSpecialized Carriers:")
-    print("Total: 5 | Available: 3 | In Use: 1 | Maintenance: 1")
-    print("\nVans:")
-    print("Total: 8 | Available: 5 | In Use: 2 | Maintenance: 1")
-    print("\nTrucks:")
-    print("Total: 6 | Available: 4 | In Use: 1 | Maintenance: 1")
+    
+    # Load vehicles and ongoing orders
+    vehicles = load_data(VEHICLE_FILE)
+    ongoing_orders = load_data(ONGOING_ORDER_FILE)
+    maintenance = load_data(MAINTENANCE_FILE)
+    
+    # Group vehicles by type
+    vehicle_types = {"Specialized Carrier": [], "Van": [], "Truck": []}
+    
+    for vehicle in vehicles:
+        v_type = vehicle[1]  # Assuming format: [VehicleID, Type, Status, LastMaintenance]
+        if v_type in vehicle_types:
+            vehicle_types[v_type].append(vehicle)
+    
+    # Display status for each vehicle type
+    for v_type, v_list in vehicle_types.items():
+        total = len(v_list)
+        in_use = sum(1 for v in v_list if v[2].lower() == 'in use')
+        maintenance = sum(1 for v in v_list if v[2].lower() == 'maintenance')
+        available = total - in_use - maintenance
+        
+        print(f"\n{v_type}:")
+        print(f"Total: {total} | Available: {available} | In Use: {in_use} | Maintenance: {maintenance}")
+    
     print_divider()
     input("Press Enter to continue...")
 
 def schedule_maintenance():
     print_header("Schedule Maintenance")
-    print_info("This feature will be implemented in future updates.")
-    input("Press Enter to continue...")
+    
+    # Load vehicles
+    vehicles = load_data(VEHICLE_FILE)
+    
+    # Show available vehicles
+    print("\nAvailable Vehicles:")
+    available_vehicles = [v for v in vehicles if v[2].lower() != 'maintenance']
+    
+    for i, vehicle in enumerate(available_vehicles, 1):
+        print(f"{i}. Vehicle ID: {vehicle[0]}")
+        print(f"   Type: {vehicle[1]}")
+        print(f"   Status: {vehicle[2]}")
+        print(f"   Last Maintenance: {vehicle[3]}")
+        print("-" * 50)
+    
+    try:
+        choice = int(input("\nSelect vehicle for maintenance (0 to cancel): "))
+        if choice == 0:
+            return
+        if not (1 <= choice <= len(available_vehicles)):
+            print_error("Invalid selection!")
+            return
+        
+        selected_vehicle = available_vehicles[choice - 1]
+        maintenance_date = input("Enter maintenance date (YYYY-MM-DD): ")
+        
+        # Validate date
+        is_valid, formatted_date, error = validate_date(maintenance_date, allow_future=True)
+        if not is_valid:
+            print_error(error)
+            return
+        
+        # Create maintenance record
+        maintenance = load_data(MAINTENANCE_FILE)
+        maintenance_record = [
+            selected_vehicle[0],    # VehicleID
+            formatted_date,         # Scheduled Date
+            "Scheduled",           # Status
+            "Routine maintenance"  # Description
+        ]
+        maintenance.append(maintenance_record)
+        
+        # Update vehicle status
+        for i, vehicle in enumerate(vehicles):
+            if vehicle[0] == selected_vehicle[0]:
+                vehicle[2] = "Maintenance"
+                vehicles[i] = vehicle
+                break
+        
+        # Save updates
+        save_data(MAINTENANCE_FILE, maintenance,
+                 "VehicleID,Date,Status,Description\n")
+        save_data(VEHICLE_FILE, vehicles,
+                 "VehicleID,Type,Status,LastMaintenance\n")
+        
+        print_success("Maintenance scheduled successfully!")
+        
+    except ValueError:
+        print_error("Invalid input!")
 
 def view_maintenance_history():
     print_header("Maintenance History")
-    print_info("This feature will be implemented in future updates.")
+    
+    maintenance = load_data(MAINTENANCE_FILE)
+    vehicles = load_data(VEHICLE_FILE)
+    
+    if not maintenance:
+        print_info("No maintenance history found!")
+        return
+    
+    # Group maintenance records by vehicle
+    for vehicle in vehicles:
+        vehicle_maintenance = [m for m in maintenance if m[0] == vehicle[0]]
+        if vehicle_maintenance:
+            print(f"\nVehicle ID: {vehicle[0]} ({vehicle[1]})")
+            for record in vehicle_maintenance:
+                print(f"Date: {record[1]}")
+                print(f"Status: {record[2]}")
+                print(f"Description: {record[3]}")
+                print("-" * 50)
+    
+    print_divider()
     input("Press Enter to continue...")
 
 def update_vehicle_status():
     print_header("Update Vehicle Status")
-    print_info("This feature will be implemented in future updates.")
-    input("Press Enter to continue...")
+    
+    # Load vehicles
+    vehicles = load_data(VEHICLE_FILE)
+    
+    # Show all vehicles
+    for i, vehicle in enumerate(vehicles, 1):
+        print(f"\n{i}. Vehicle Details:")
+        print(f"   ID: {vehicle[0]}")
+        print(f"   Type: {vehicle[1]}")
+        print(f"   Current Status: {vehicle[2]}")
+        print("-" * 50)
+    
+    try:
+        choice = int(input("\nSelect vehicle to update (0 to cancel): "))
+        if choice == 0:
+            return
+        if not (1 <= choice <= len(vehicles)):
+            print_error("Invalid selection!")
+            return
+        
+        print("\nAvailable Statuses:")
+        print("1. Available")
+        print("2. In Use")
+        print("3. Maintenance")
+        
+        status_choice = input("\nSelect new status (1-3): ")
+        new_status = {
+            '1': 'Available',
+            '2': 'In Use',
+            '3': 'Maintenance'
+        }.get(status_choice)
+        
+        if not new_status:
+            print_error("Invalid status choice!")
+            return
+        
+        # Update vehicle status
+        vehicles[choice - 1][2] = new_status
+        
+        # Save updates
+        save_data(VEHICLE_FILE, vehicles,
+                 "VehicleID,Type,Status,LastMaintenance\n")
+        
+        print_success("Vehicle status updated successfully!")
+        
+    except ValueError:
+        print_error("Invalid input!")
 
 def generate_reports():
     while True:
@@ -1859,7 +2205,7 @@ def generate_customer_feedback_report():
     print("\nRating Distribution:")
     for rating, count in rating_counts.items():
         percentage = (count / len(reviews)) * 100
-        print(f"{rating} : {count} ({percentage:.1f}%)")
+    print(f"{rating} : {count} ({percentage:.1f}%)")
     
     print("\nRecent Reviews:")
     for review in reviews[-5:]:  # Show last 5 reviews
@@ -1920,5 +2266,111 @@ def view_user_orders(username):
         print("-" * 50)
     
     input("Press Enter to continue...")
+
+# Add this function to fetch user data by ID
+def get_user_data_by_id(user_id):
+    """Fetch user data based on user ID."""
+    users = load_data(USER_FILE)
+    for user in users:
+        if user[0].strip() == user_id.strip():
+            return user
+    print_error("User not found!")
+    return None
+
+# Add these functions for fuel management
+def load_fuel_rates():
+    """Load fuel rates from file or create with defaults if not exists"""
+    try:
+        rates = load_data(FUEL_RATES_FILE)
+        if not rates:
+            raise FileNotFoundError
+        return {rate[0]: float(rate[1]) for rate in rates}
+    except FileNotFoundError:
+        # Default rates in L/100km
+        default_rates = {
+            "Specialized Carrier": 8.5,
+            "Van": 12.0,
+            "Truck": 20.0
+        }
+        # Save default rates
+        save_fuel_rates(default_rates)
+        return default_rates
+
+def save_fuel_rates(rates):
+    """Save fuel rates to file"""
+    data = [[vehicle, str(rate)] for vehicle, rate in rates.items()]
+    save_data(FUEL_RATES_FILE, data, "VehicleType,ConsumptionRate\n")
+
+def load_route_distances():
+    """Load route distances from file or create with defaults if not exists"""
+    try:
+        distances = load_data(ROUTE_DISTANCES_FILE)
+        if not distances:
+            raise FileNotFoundError
+        return {route[0]: int(route[1]) for route in distances}
+    except FileNotFoundError:
+        # Default distances in km
+        default_distances = {
+            "Route 1": 850,  # Johor-KL-Butterworth-Kedah-Perlis
+            "Route 2": 780   # Johor-KL-Terengganu-Kelantan
+        }
+        # Save default distances
+        save_route_distances(default_distances)
+        return default_distances
+
+def save_route_distances(distances):
+    """Save route distances to file"""
+    data = [[route, str(dist)] for route, dist in distances.items()]
+    save_data(ROUTE_DISTANCES_FILE, data, "RouteName,Distance\n")
+
+def initialize_system_files():
+    """Initialize all required system files with headers if they don't exist"""
+    file_headers = {
+        VEHICLE_FILE: "VehicleID,Type,Status,LastMaintenance\n",
+        MAINTENANCE_FILE: "VehicleID,Date,Status,Description\n",
+        FUEL_LOG_FILE: "OrderID,VehicleType,Distance,FuelUsed,Cost,Date\n",
+        FUEL_RATES_FILE: "VehicleType,ConsumptionRate\n",
+        ROUTE_DISTANCES_FILE: "RouteName,Distance\n"
+    }
+    
+    # Initialize each file if it doesn't exist or is empty
+    for filename, header in file_headers.items():
+        try:
+            # Check if file exists and has content
+            try:
+                with open(filename, 'r') as file:
+                    content = file.read().strip()
+                    if not content:  # File is empty
+                        raise FileNotFoundError  # Treat empty file as non-existent
+            except FileNotFoundError:
+                # Create or overwrite the file with header and default content
+                with open(filename, 'w') as file:
+                    file.write(header)
+                    if filename == VEHICLE_FILE:
+                        # Add 6 vehicles of each type
+                        current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                        
+                        # Add Specialized Carriers
+                        for i in range(1, 7):
+                            file.write(f"SC{str(i).zfill(2)},Specialized Carrier,Available,{current_date}\n")
+                        
+                        # Add Vans
+                        for i in range(1, 7):
+                            file.write(f"VN{str(i).zfill(2)},Van,Available,{current_date}\n")
+                        
+                        # Add Trucks
+                        for i in range(1, 7):
+                            file.write(f"TR{str(i).zfill(2)},Truck,Available,{current_date}\n")
+                    elif filename == FUEL_RATES_FILE:
+                        # Add default fuel rates
+                        file.write("Specialized Carrier,8.5\n")
+                        file.write("Van,12.0\n")
+                        file.write("Truck,20.0\n")
+                    elif filename == ROUTE_DISTANCES_FILE:
+                        # Add default routes
+                        file.write("Route 1,850\n")
+                        file.write("Route 2,780\n")
+        except Exception as e:
+            print_error(f"Error initializing {filename}: {e}")
 
 main_menu()
