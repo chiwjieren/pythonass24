@@ -78,41 +78,58 @@ def get_next_id(prefix, current_ids=None):
 
 # UI utility functions
 def print_header(text):
+    """Print a consistent header with a title"""
     width = 50
     print("\n" + "=" * width)
     print(f"{text:^{width}}")
     print("=" * width)
 
 def print_menu(title, options):
+    """Print a consistent menu with options"""
     width = 50
-    print("\n╔" + "═" * (width-2) + "╗")
-    print(f"║{title:^{width-2}}║")
-    print("╠" + "═" * (width-2) + "╣")
-    for num, option in enumerate(options, 1):
-        print(f"║ {num}. {option:<{width-4}}║")
-    print("╚" + "═" * (width-2) + "╝") 
+    print("\n+" + "-" * (width-2) + "+")
+    print(f"| {title:<{width-3}}|")
+    print("+" + "-" * (width-2) + "+")
+    for i, option in enumerate(options, 1):
+        print(f"| {i}. {option:<{width-5}}|")
+    print("+" + "-" * (width-2) + "+")
 
-# Additional UI utility functions
 def print_info(text):
-    print(f"\n>>> {text}")
+    """Print information messages consistently"""
+    print(f"\n| > {text}")
 
 def print_error(text):
-    print(f"\n!!! {text}")
+    """Print error messages consistently"""
+    print(f"\n| ! {text}")
 
 def print_success(text):
-    print(f"\n✓ {text}")
+    """Print success messages consistently"""
+    print(f"\n| * {text}")
 
 def print_divider():
+    """Print a consistent divider line"""
     print("\n" + "─" * 50)
 
 def print_order_details(order):
-    width = 60
-    print("\n┌" + "─" * (width-2) + "┐")
-    print(f" Order ID: {order[0]:<{width-13}}│")
-    print(f"│ Item: {order[1]:<{width-9}}│")
-    print(f"│ Quantity: {order[2]:<{width-12}}│")
-    print(f"│ Status: {order[12]:<{width-11}}│")
-    print("└" + "─" * (width-2) + "┘")
+    """Print order details in a consistent format"""
+    width = 50
+    print("\n+" + "-" * (width-2) + "+")
+    print(f"| Order ID: {order[0]:<{width-13}}|")
+    print(f"| Item: {order[1]:<{width-9}}|")
+    print(f"| Quantity: {order[2]:<{width-12}}|")
+    print(f"| Status: {order[12]:<{width-11}}|")
+    print("+" + "-" * (width-2) + "+")
+
+def print_review_details(review):
+    """Print review details in a consistent format"""
+    width = 50
+    print("\n+" + "-" * (width-2) + "+")
+    print(f"| Order ID: {review[0]:<{width-13}}|")
+    print(f"| Item: {review[1]:<{width-9}}|")
+    print(f"| Rating: {'*' * int(review[3]):<{width-11}}|")
+    print(f"| Review: {review[2]:<{width-11}}|")
+    print(f"| Date: {review[5]:<{width-9}}|")
+    print("+" + "-" * (width-2) + "+")
 
 class PricingCalculator:
     def __init__(self):
@@ -773,9 +790,8 @@ def print_review_details(review):
     print("\n┌" + "─" * (width-2) + "┐")
     print(f"│ Order ID: {review[0]:<{width-13}}│")
     print(f"│ Item: {review[1]:<{width-9}}│")
-    print("├" + "─" * (width-2) + "┤")
+    print(f"│ Rating: {'*' * int(review[3]):<{width-11}}│")
     print(f"│ Review: {review[2]:<{width-11}}│")
-    print(f"│ Rating: {int(review[3]) * '*':<{width-11}}│")
     print(f"│ Date: {review[5]:<{width-9}}│")
     print("└" + "─" * (width-2) + "┘")
 
@@ -1341,28 +1357,23 @@ def leave_review(userID):
         print_error("Invalid input!")
 
 def view_reviews(userID):
-    print_header("My Reviews")
-    
-    # Load reviews
+    print_header(f"Reviews for User {userID}")
     reviews = load_data(REVIEWS_FILE)
-    
-    # Filter reviews for this user
     user_reviews = [review for review in reviews if review[4] == userID]
+    
     if not user_reviews:
         print_info("No reviews found!")
         return
     
-    # Sort reviews by date (newest first)
-    user_reviews.sort(key=lambda x: x[5], reverse=True)
-    
     for review in user_reviews:
-        print("\nOrder Details:")
-        print(f"Order ID: {review[0]}")
-        print(f"Item: {review[1]}")
-        print(f"Rating: {'★' * int(review[3])}")  # Display stars based on rating
-        print(f"Review: {review[2]}")
-        print(f"Date: {review[5]}")
-        print("-" * 50)
+        width = 50
+        print("\n+" + "-" * (width-2) + "+")
+        print(f"| Order ID: {review[0]:<{width-13}}|")
+        print(f"| Item: {review[1]:<{width-9}}|")
+        print(f"| Rating: {'*' * int(review[3]):<{width-11}}|")
+        print(f"| Review: {review[2]:<{width-11}}|")
+        print(f"| Date: {review[5]:<{width-9}}|")
+        print("+" + "-" * (width-2) + "+")
     
     print_divider()
     input("Press Enter to continue...")
@@ -2046,7 +2057,7 @@ def generate_daily_orders_report():
     print_header("Daily Orders Report")
     
     while True:
-        report_date = input("Enter date to report (YYYY-MM-DD) or press Enter for today: ").strip()
+        report_date = input("\n│ Enter date (YYYY-MM-DD) or press Enter for today: ").strip()
         if not report_date:
             report_date = datetime.datetime.now().strftime("%Y-%m-%d")
             break
@@ -2067,15 +2078,17 @@ def generate_daily_orders_report():
     today_completed = [order for order in completed if order[13] == report_date]
     today_cancelled = [order for order in cancelled if order[13] == report_date]
     
-    print(f"\nDaily Report for {report_date}")
-    print_divider()
-    print(f"New Orders: {len(today_ongoing)}")
-    print(f"Completed Orders: {len(today_completed)}")
-    print(f"Cancelled Orders: {len(today_cancelled)}")
-    print(f"Total Orders: {len(today_ongoing) + len(today_completed) + len(today_cancelled)}")
+    width = 50
+    print("\n┌" + "─" * (width-2) + "┐")
+    print(f"│ Report for {report_date:<{width-13}}│")
+    print("├" + "─" * (width-2) + "┤")
+    print(f"│ New Orders: {len(today_ongoing):<{width-15}}│")
+    print(f"│ Completed Orders: {len(today_completed):<{width-21}}│")
+    print(f"│ Cancelled Orders: {len(today_cancelled):<{width-20}}│")
+    print(f"│ Total Orders: {len(today_ongoing) + len(today_completed) + len(today_cancelled):<{width-16}}│")
+    print("└" + "─" * (width-2) + "┘")
     
-    print_divider()
-    input("Press Enter to continue...")
+    input("\n│ Press Enter to continue...")
 
 def generate_revenue_report():
     print_header("Revenue Report")
@@ -2189,33 +2202,34 @@ def generate_driver_performance_report():
 def generate_customer_feedback_report():
     print_header("Customer Feedback Report")
     
-    # Get all reviews
     reviews = load_data(REVIEWS_FILE)
-    
     if not reviews:
         print_info("No reviews found!")
         return
     
     # Calculate average rating
-    total_rating = sum(float(review[3]) for review in reviews)
+    total_rating = sum(int(review[3]) for review in reviews)
     avg_rating = total_rating / len(reviews)
     
-    # Count ratings
-    rating_counts = {str(i): 0 for i in range(1, 6)}
-    for review in reviews:
-        rating_counts[review[3]] += 1
+    print("\nOverall Statistics:")
+    print(f"Total Reviews: {len(reviews)}")
+    print(f"Average Rating: {avg_rating:.1f} (*{'*' * int(avg_rating)})")
     
-    print(f"\nTotal Reviews: {len(reviews)}")
-    print(f"Average Rating: {avg_rating:.1f} ")
+    # Group reviews by rating
+    reviews_by_rating = {}
+    for i in range(5, 0, -1):
+        reviews_by_rating[i] = [review for review in reviews if int(review[3]) == i]
     
-    print("\nRating Distribution:")
-    for rating, count in rating_counts.items():
-        percentage = (count / len(reviews)) * 100
-    print(f"{rating} : {count} ({percentage:.1f}%)")
-    
-    print("\nRecent Reviews:")
-    for review in reviews[-5:]:  # Show last 5 reviews
-        print_review_details(review)
+    print("\nReviews by Rating:")
+    for rating, rating_reviews in reviews_by_rating.items():
+        if rating_reviews:
+            print(f"\nRating {rating} {'*' * rating} ({len(rating_reviews)} reviews):")
+            for review in rating_reviews[:3]:  # Show only 3 most recent reviews per rating
+                print(f"\nOrder: {review[0]}")
+                print(f"Item: {review[1]}")
+                print(f"Review: {review[2]}")
+                print(f"Date: {review[5]}")
+                print("-" * 50)
     
     print_divider()
     input("Press Enter to continue...")
