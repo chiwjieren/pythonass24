@@ -245,6 +245,10 @@ def assign_orders_to_drivers():
         
         selected_order = pending_orders[order_choice - 1]
         
+        # Ensure the order list is long enough
+        while len(selected_order) < 18:  # Ensure it has at least 18 elements
+            selected_order.append('')  # Extend the list if necessary
+        
         # Show available drivers
         print("\nAvailable Drivers:")
         for i, driver in enumerate(available_drivers, 1):
@@ -259,14 +263,26 @@ def assign_orders_to_drivers():
             return
         
         selected_driver = available_drivers[driver_choice - 1]
+
+        # Simplified route selection
+        print("\nAvailable Routes:")
+        print("1. Route 1")
+        print("2. Route 2")
         
-        # Ensure the order list is long enough
-        while len(selected_order) <= 16:
-            selected_order.append('')  # Extend the list if necessary
+        route_choice = int(input("\nSelect route to assign (1-2): "))
+        if route_choice not in [1, 2]:
+            print_error("Invalid route selection! Please select 1 or 2.")
+            return
         
-        # Update order with assigned driver and change status
+        selected_route = f"Route {route_choice}"  # Assign simplified route
+        
+        # Update order with assigned driver, route, and change status
         selected_order[16] = selected_driver[0]  # Assign DriverID
         selected_order[12] = 'Assigned'  # Update status to 'Assigned'
+        selected_order[17] = selected_route  # Assign the selected route
+        
+        # Update the original orders list with the modified order
+        orders[orders.index(selected_order)] = selected_order
         
         # Save updates
         save_data(ONGOING_ORDER_FILE, orders,
@@ -274,10 +290,10 @@ def assign_orders_to_drivers():
                  "RecipientName,RecipientPhone,ShipmentSize,VehicleType,Payment,"
                  "Status,PurchaseDate,UserID,Price,DriverID,Route\n")
         
-        print_success(f"Order {selected_order[0]} assigned to Driver {selected_driver[0]}")
+        print_success(f"Order {selected_order[0]} assigned to Driver {selected_driver[0]} on {selected_route}")
         
     except ValueError:
-        print_error("Invalid input!")
+        print_error("Invalid input! Please enter a number.")
 
 def update_order_status(username):
     print_header("Update Order Status")
