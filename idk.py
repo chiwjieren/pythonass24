@@ -538,6 +538,12 @@ def driver_signup():
     address = input("Address: ")
     license_no = input("License Number: ")
     
+    # New health report input
+    health_report = input("Health Report (Good/Bad): ").strip().lower()
+    while health_report not in ["good", "bad"]:
+        print_error("Invalid input! Please enter 'Good' or 'Bad'.")
+        health_report = input("Health Report (Good/Bad): ").strip().lower()
+    
     drivers = load_data(DRIVER_FILE)
     
     if any(driver[1] == username for driver in drivers):
@@ -547,9 +553,9 @@ def driver_signup():
     driver_ids = [driver[0] for driver in drivers]
     driver_id = get_next_id('D', driver_ids)
     
-    new_driver = [driver_id, username, password, name, contact, address, license_no, "available"]
+    new_driver = [driver_id, username, password, name, contact, address, license_no, "available", health_report]
     drivers.append(new_driver)
-    save_data(DRIVER_FILE, drivers, "DriverID,Username,Password,Name,Contact,Address,LicenseNo,Status\n")
+    save_data(DRIVER_FILE, drivers, "DriverID,Username,Password,Name,Contact,Address,LicenseNo,Status,HealthReport\n")
     print_success(f"Registration successful! Your Driver ID is: {driver_id}")
 
 def driver_menu(username):
@@ -589,8 +595,16 @@ def update_driver_profile(username):
             driver[4] = input(f"Contact (current: {driver[4]}): ") or driver[4]
             driver[5] = input(f"Address (current: {driver[5]}): ") or driver[5]
             driver[6] = input(f"License Number (current: {driver[6]}): ") or driver[6]
+            
+            # Update health report
+            health_report = input(f"Health Report (current: {driver[8]}): ") or driver[8].lower()
+            while health_report not in ["good", "bad"]:
+                print_error("Invalid input! Please enter 'Good' or 'Bad'.")
+                health_report = input("Health Report (Good/Bad): ").strip().lower()
+            driver[8] = health_report
+            
             drivers[i] = driver
-            save_data(DRIVER_FILE, drivers, "DriverID,Username,Password,Name,Contact,Address,LicenseNo,Status\n")
+            save_data(DRIVER_FILE, drivers, "DriverID,Username,Password,Name,Contact,Address,LicenseNo,Status,HealthReport\n")
             print_success("Profile updated successfully!")
             return
     print_error("Driver not found!")
@@ -1040,7 +1054,6 @@ def view_orders(userID):
                 
                 if len(order) >= 17 and order[16]:  # If driver is assigned
                     driver_name = next((d[3] for d in load_data(DRIVER_FILE) if d[0] == order[16]), "Unassigned")
-                    print(f"Driver: {driver_name}")
     
     print_divider()
     input("Press Enter to continue...")
