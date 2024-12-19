@@ -531,19 +531,43 @@ def driver_login():
 
 def driver_signup():
     print_header("Driver Registration")
-    username = input("Username: ")
-    password = input("Password: ")
-    name = input("Full Name: ")
-    contact = input("Contact Number: ")
-    address = input("Address: ")
-    license_no = input("License Number: ")
     
-    # New health report input
-    health_report = input("Health Report (Good/Bad): ").strip().lower()
-    while health_report not in ["good", "bad"]:
-        print_error("Invalid input! Please enter 'Good' or 'Bad'.")
-        health_report = input("Health Report (Good/Bad): ").strip().lower()
+    username = get_validated_input(
+        "Enter Username",
+        validate_username,
+        "Username must be at least 5 characters long and contain only letters and numbers",
+        "(min 5 characters, letters and numbers only)"
+    )
     
+    password = get_validated_input(
+        "Enter Password",
+        validate_password,
+        "Password must be at least 8 characters and contain at least one letter and one number",
+        "(min 8 chars, include numbers and letters)"
+    )
+    
+    name = get_validated_input(
+        "Enter Full Name",
+        validate_name,
+        "Name must contain only letters and spaces"
+    )
+    
+    contact = get_validated_input(
+        "Enter Contact Number",
+        validate_phone_number,
+        "Phone number must be in format: XXX-XXXXXXXX",
+        "(format: XXX-XXXXXXXX)"
+    )
+    
+    address = get_str_input("Enter Address: ")
+    
+    license_no = get_validated_input(
+        "Enter License Number",
+        validate_license_number,
+        "License number must be in format: LXXXX (L=letter, X=number)",
+        "(format: LXXXX)"
+    )
+
     drivers = load_data(DRIVER_FILE)
     
     if any(driver[1] == username for driver in drivers):
@@ -553,9 +577,13 @@ def driver_signup():
     driver_ids = [driver[0] for driver in drivers]
     driver_id = get_next_id('D', driver_ids)
     
-    new_driver = [driver_id, username, password, name, contact, address, license_no, "available", health_report]
+    new_driver = [
+        driver_id, username, password, name, contact, 
+        address, license_no, "available", "good"
+    ]
     drivers.append(new_driver)
-    save_data(DRIVER_FILE, drivers, "DriverID,Username,Password,Name,Contact,Address,LicenseNo,Status,HealthReport\n")
+    save_data(DRIVER_FILE, drivers, 
+             "DriverID,Username,Password,Name,Contact,Address,LicenseNo,Status,HealthReport\n")
     print_success(f"Registration successful! Your Driver ID is: {driver_id}")
 
 def driver_menu(username):
@@ -812,8 +840,20 @@ def print_review_details(review):
 # Customer functions
 def customer_signup():
     print_header("Customer Registration")
-    username = input("Enter Username: ").strip()
-    password = input("Enter Password: ").strip()
+    
+    username = get_validated_input(
+        "Enter Username",
+        validate_username,
+        "Username must be at least 5 characters long and contain only letters and numbers",
+        "(min 5 characters, letters and numbers only)"
+    )
+    
+    password = get_validated_input(
+        "Enter Password",
+        validate_password,
+        "Password must be at least 8 characters and contain at least one letter and one number",
+        "(min 8 chars, include numbers and letters)"
+    )
     
     users = load_data(USER_FILE)
     user_ids = [user[0] for user in users]
@@ -894,40 +934,43 @@ def new_order(userID):
     ]
     
     print_divider()
-    item_name = input("Enter Item Name: ").strip()
-    try:
-        quantity = int(input("Quantity: "))
-    except ValueError:
-        print_error("Invalid input for quantity. Must be a number.")
-        return
+    item_name = get_str_input("Enter Item Name: ")
+    quantity = get_int_input("Enter Quantity: ", min_val=1)
 
     print_location_menu(locations)
-    try:
-        ship_from_choice = int(input("\nEnter shipping from location (1-7): "))
-        if ship_from_choice < 1 or ship_from_choice > len(locations):
-            print_error("Invalid choice. Please select a valid location.")
-            return
-        ship_from = locations[ship_from_choice - 1]
-    except ValueError:
-        print_error("Invalid input. Please enter a number.")
-        return
+    ship_from_choice = get_int_input("Enter shipping from location (1-7): ", min_val=1, max_val=7)
+    ship_from = locations[ship_from_choice - 1]
 
     print_location_menu(locations)
-    try:
-        ship_to_choice = int(input("\nEnter shipping to location (1-7): "))
-        if ship_to_choice < 1 or ship_to_choice > len(locations):
-            print_error("Invalid choice. Please select a valid location.")
-            return
-        ship_to = locations[ship_to_choice - 1]
-    except ValueError:
-        print_error("Invalid input. Please enter a number.")
-        return
+    ship_to_choice = get_int_input("Enter shipping to location (1-7): ", min_val=1, max_val=7)
+    ship_to = locations[ship_to_choice - 1]
 
     print_divider()
-    sender_name = input("Sender Name: ").strip()
-    sender_phone = input("Sender Phone: ").strip()
-    recipient_name = input("Recipient Name: ").strip()
-    recipient_phone = input("Recipient Phone: ").strip()
+    sender_name = get_validated_input(
+        "Enter Sender Name",
+        validate_name,
+        "Name must contain only letters and spaces"
+    )
+    
+    sender_phone = get_validated_input(
+        "Enter Sender Phone",
+        validate_phone_number,
+        "Phone number must be in format: XXX-XXXXXXXX",
+        "(format: XXX-XXXXXXXX)"
+    )
+    
+    recipient_name = get_validated_input(
+        "Enter Recipient Name",
+        validate_name,
+        "Name must contain only letters and spaces"
+    )
+    
+    recipient_phone = get_validated_input(
+        "Enter Recipient Phone",
+        validate_phone_number,
+        "Phone number must be in format: XXX-XXXXXXXX",
+        "(format: XXX-XXXXXXXX)"
+    )
 
     print_shipment_menu()
     shipment_size_choice = input("\nEnter your choice (1-3): ").strip()
@@ -2405,5 +2448,104 @@ def initialize_system_files():
                         file.write("Route 2,780\n")
         except Exception as e:
             print_error(f"Error initializing {filename}: {e}")
+
+def get_int_input(prompt, error_message="Invalid input! Please enter a number."):
+    """Get an integer input from the user with validation."""
+    while True:
+        try:
+            return int(input(prompt))
+        except ValueError:
+            print_error(error_message)
+
+def get_str_input(prompt, error_message="Invalid input! Please enter a valid string."):
+    """Get a string input from the user with validation."""
+    while True:
+        value = input(prompt).strip()
+        if value:
+            return value
+        print_error(error_message)
+
+def get_enum_input(prompt, valid_options, error_message="Invalid input!"):
+    """Get an enumerated input from the user with validation."""
+    while True:
+        value = input(prompt).strip().lower()
+        if value in valid_options:
+            return value
+        print_error(error_message)
+
+# Add these validation functions at the beginning of the file, after the imports
+
+def validate_phone_number(phone):
+    """Validate phone number format: XXX-XXXXXXX"""
+    import re
+    pattern = r'^\d{3}-\d{7}$'
+    return bool(re.match(pattern, phone))
+
+def validate_name(name):
+    """Validate name format: only letters and spaces allowed"""
+    return bool(name.strip() and all(c.isalpha() or c.isspace() for c in name))
+
+def validate_username(username):
+    """Validate username format: letters, numbers, minimum 5 characters"""
+    return bool(username.strip() and len(username) >= 5 and username.isalnum())
+
+def validate_password(password):
+    """Validate password format: minimum 8 characters, at least one number and one letter"""
+    return bool(
+        len(password) >= 8 and 
+        any(c.isdigit() for c in password) and 
+        any(c.isalpha() for c in password)
+    )
+
+def validate_license_number(license_no):
+    """Validate license number format: LXXXX (L=letter, X=number)"""
+    import re
+    pattern = r'^[A-Z]\d{4}$'
+    return bool(re.match(pattern, license_no))
+
+def get_validated_input(prompt, validator, error_message, format_hint=""):
+    """Generic function to get validated input"""
+    while True:
+        value = input(f"{prompt}{' ' + format_hint if format_hint else ''}: ").strip()
+        if validator(value):
+            return value
+        print_error(f"{error_message}")
+
+# Update these existing input functions
+def get_str_input(prompt, error_message="Invalid input! Please enter a valid string."):
+    """Get a non-empty string input"""
+    while True:
+        value = input(prompt).strip()
+        if value and all(c.isalpha() or c.isspace() for c in value):
+            return value
+        print_error(error_message)
+
+def get_int_input(prompt, min_val=None, max_val=None):
+    """Get integer input within optional range"""
+    while True:
+        try:
+            value = int(input(prompt))
+            if (min_val is None or value >= min_val) and (max_val is None or value <= max_val):
+                return value
+            range_str = f"between {min_val} and {max_val}" if min_val is not None and max_val is not None else \
+                       f"greater than {min_val}" if min_val is not None else \
+                       f"less than {max_val}"
+            print_error(f"Please enter a number {range_str}.")
+        except ValueError:
+            print_error("Invalid input! Please enter a number.")
+
+def get_float_input(prompt, min_val=None, max_val=None):
+    """Get float input within optional range"""
+    while True:
+        try:
+            value = float(input(prompt))
+            if (min_val is None or value >= min_val) and (max_val is None or value <= max_val):
+                return value
+            range_str = f"between {min_val} and {max_val}" if min_val is not None and max_val is not None else \
+                       f"greater than {min_val}" if min_val is not None else \
+                       f"less than {max_val}"
+            print_error(f"Please enter a number {range_str}.")
+        except ValueError:
+            print_error("Invalid input! Please enter a number.")
 
 main_menu()
