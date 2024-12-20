@@ -2351,44 +2351,43 @@ def get_user_data_by_id(user_id):
 
 # Add these functions for fuel management
 def load_fuel_rates():
-    """Load fuel rates from file or create with defaults if not exists"""
+    """Load fuel consumption rates from file"""
     try:
-        rates = load_data(FUEL_RATES_FILE)
-        if not rates:
-            raise FileNotFoundError
-        return {rate[0]: float(rate[1]) for rate in rates}
+        with open(FUEL_RATES_FILE, 'r') as file:
+            rates = {}
+            for line in file:
+                if line.strip():
+                    vehicle_type, rate = line.strip().split(',')
+                    rates[vehicle_type] = float(rate)
+            return rates
     except FileNotFoundError:
-        # Default rates in L/100km
-        default_rates = {
-            "Specialized Carrier": 8.5,
-            "Van": 12.0,
-            "Truck": 20.0
+        return {
+            "Specialized Carrier": 12.5,
+            "Van": 10.0,
+            "Truck": 15.0
         }
-        # Save default rates
-        save_fuel_rates(default_rates)
-        return default_rates
 
 def save_fuel_rates(rates):
-    """Save fuel rates to file"""
-    data = [[vehicle, str(rate)] for vehicle, rate in rates.items()]
-    save_data(FUEL_RATES_FILE, data, "VehicleType,ConsumptionRate\n")
+    """Save fuel consumption rates to file"""
+    with open(FUEL_RATES_FILE, 'w') as file:
+        for vehicle_type, rate in rates.items():
+            file.write(f"{vehicle_type},{rate}\n")
 
 def load_route_distances():
-    """Load route distances from file or create with defaults if not exists"""
+    """Load route distances from file"""
     try:
-        distances = load_data(ROUTE_DISTANCES_FILE)
-        if not distances:
-            raise FileNotFoundError
-        return {route[0]: int(route[1]) for route in distances}
+        with open(ROUTE_DISTANCES_FILE, 'r') as file:
+            distances = {}
+            for line in file:
+                if line.strip():
+                    route, distance = line.strip().split(',')
+                    distances[route] = float(distance)
+            return distances
     except FileNotFoundError:
-        # Default distances in km
-        default_distances = {
-            "Route 1": 850,  # Johor-KL-Butterworth-Kedah-Perlis
-            "Route 2": 780   # Johor-KL-Terengganu-Kelantan
+        return {
+            "Route 1": 850,  # Johor → KL → Butterworth → Kedah → Perlis
+            "Route 2": 780   # Johor → KL → Terengganu → Kelantan
         }
-        # Save default distances
-        save_route_distances(default_distances)
-        return default_distances
 
 def save_route_distances(distances):
     """Save route distances to file"""
