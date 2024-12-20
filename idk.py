@@ -20,6 +20,24 @@ STOPOVER_TIME = 30  # minutes
 SAFETY_CHECK_TIME = 30  # minutes
 TURNOVER_TIME = 60  # minutes
 
+# Global pricing configuration
+BASE_PRICE = 50
+PRICE_PER_UNIT = 10
+
+# Vehicle type pricing
+VEHICLE_PRICES = {
+    "Specialized Carrier": 100,
+    "Van": 150,
+    "Truck": 200
+}
+
+# Shipment size pricing
+SHIPMENT_SIZE_PRICES = {
+    "BulkOrder": 50,
+    "SmallParcel": 100,
+    "SpecialCargo": 150
+}
+
 # Utility functions for file operations
 def load_data(filename):
     try:
@@ -131,52 +149,30 @@ def print_review_details(review):
     print(f"| Date: {review[5]:<{width-9}}|")
     print("+" + "-" * (width-2) + "+")
 
-class PricingCalculator:
-    def __init__(self):
-        # Base pricing configuration
-        self.base_price = 50
-        self.price_per_unit = 10
-        
-        # Vehicle type pricing
-        self.vehicle_prices = {
-            "Specialized Carrier": 100,
-            "Van": 150,
-            "Truck": 200
-        }
-        
-        # Shipment size pricing
-        self.shipment_size_prices = {
-            "BulkOrder": 50,
-            "SmallParcel": 100,
-            "SpecialCargo": 150
-        }
-    
-    def calculate_vehicle_price(self, vehicle_type):
-        """Calculate price based on vehicle type"""
-        return self.vehicle_prices.get(vehicle_type, 0)
-    
-    def calculate_shipment_price(self, shipment_size):
-        """Calculate price based on shipment size"""
-        return self.shipment_size_prices.get(shipment_size, 0)
-    
-    def calculate_quantity_price(self, quantity):
-        """Calculate price based on quantity"""
-        return quantity * self.price_per_unit
-    
-    def calculate_total_price(self, quantity, vehicle_type, shipment_size):
-        """Calculate total price for an order"""
-        total = self.base_price
-        total += self.calculate_quantity_price(quantity)
-        total += self.calculate_vehicle_price(vehicle_type)
-        total += self.calculate_shipment_price(shipment_size)
-        return total
+def calculate_vehicle_price(vehicle_type):
+    """Calculate price based on vehicle type"""
+    return VEHICLE_PRICES.get(vehicle_type, 0)
 
-# Create a global instance of the pricing calculator
-pricing_calculator = PricingCalculator()
+def calculate_shipment_price(shipment_size):
+    """Calculate price based on shipment size"""
+    return SHIPMENT_SIZE_PRICES.get(shipment_size, 0)
 
+def calculate_quantity_price(quantity):
+    """Calculate price based on quantity"""
+    return quantity * PRICE_PER_UNIT
+
+def calculate_total_price(quantity, vehicle_type, shipment_size):
+    """Calculate total price for an order"""
+    total = BASE_PRICE
+    total += calculate_quantity_price(quantity)
+    total += calculate_vehicle_price(vehicle_type)
+    total += calculate_shipment_price(shipment_size)
+    return total
+
+# Replace the existing calculate_order_price function with this
 def calculate_order_price(quantity, vehicle_type, shipment_size):
-    """Calculate the total price for an order using the pricing calculator"""
-    return pricing_calculator.calculate_total_price(quantity, vehicle_type, shipment_size)
+    """Calculate the total price for an order"""
+    return calculate_total_price(quantity, vehicle_type, shipment_size)
 
 # Main menu and system selection
 def main_menu():
