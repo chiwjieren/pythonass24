@@ -21,20 +21,20 @@ SAFETY_CHECK_TIME = 30  # minutes
 TURNOVER_TIME = 60  # minutes
 
 # Global pricing configuration
-BASE_PRICE = 50
-PRICE_PER_UNIT = 10
+BASE_PRICE = 5
+PRICE_PER_UNIT = 5
 
 # Vehicle type pricing
 VEHICLE_PRICES = {
     "Specialized Carrier": 100,
-    "Van": 150,
-    "Truck": 200
+    "Van": 10,
+    "Truck": 20
 }
 
 # Shipment size pricing
 SHIPMENT_SIZE_PRICES = {
     "BulkOrder": 50,
-    "SmallParcel": 100,
+    "SmallParcel": 10,
     "SpecialCargo": 150
 }
 
@@ -180,7 +180,7 @@ def main_menu():
     initialize_system_files()
     
     while True:
-        print_header("LOGISTICS MANAGEMENT SYSTEM")
+        print_header("IPostSpeed")
         options = ["Driver Access", "Customer Access", "Admin Access", "Exit"]
         print_menu("Main Menu", options)
         
@@ -539,7 +539,7 @@ def driver_signup():
         "Enter Password",
         validate_password,
         "Password must be at least 8 characters and contain at least one letter and one number",
-        "(min 8 chars, include numbers and letters)"
+        "(min 8 character, include numbers and letters)"
     )
     
     name = get_validated_input(
@@ -964,8 +964,8 @@ def new_order(userID):
     recipient_phone = get_validated_input(
         "Enter Recipient Phone",
         validate_phone_number,
-        "Phone number must be in format: XXX-XXXXXXXX",
-        "(format: XXX-XXXXXXXX)"
+        "Phone number must be in format: XXX-XXXXXXX",
+        "(format: XXX-XXXXXXX)"
     )
 
     print_shipment_menu()
@@ -2444,21 +2444,6 @@ def initialize_system_files():
         except Exception as e:
             print_error(f"Error initializing {filename}: {e}")
 
-def get_int_input(prompt, error_message="Invalid input! Please enter a number."):
-    """Get an integer input from the user with validation."""
-    while True:
-        try:
-            return int(input(prompt))
-        except ValueError:
-            print_error(error_message)
-
-def get_str_input(prompt, error_message="Invalid input! Please enter a valid string."):
-    """Get a string input from the user with validation."""
-    while True:
-        value = input(prompt).strip()
-        if value:
-            return value
-        print_error(error_message)
 
 def get_enum_input(prompt, valid_options, error_message="Invalid input!"):
     """Get an enumerated input from the user with validation."""
@@ -2543,4 +2528,7 @@ def get_float_input(prompt, min_val=None, max_val=None):
         except ValueError:
             print_error("Invalid input! Please enter a number.")
 
+
+
 main_menu()
+
